@@ -50,7 +50,7 @@ def test_classic_quota_ctx_off_unchanged():
 
 
 def test_classic_quota_ctx_severity_band():
-    """Context bar colors on 70/85 (context band), not the 5h/7d comfort band."""
+    """Context bar colors on 65/85 (context band), same as the 5h/7d comfort band."""
     theme = progress.get_theme("graphite")
     ok = progress._fg(theme.s_ok)
     warn = progress._fg(theme.s_warn)
@@ -63,8 +63,8 @@ def test_classic_quota_ctx_severity_band():
             show_context=True, use_color=True, theme=theme,
         )
 
-    assert f"{ok}ctx" in _line(50)     # calm below 70
-    assert f"{warn}ctx" in _line(75)   # warn >= 70
+    assert f"{ok}ctx" in _line(50)     # calm below 65
+    assert f"{warn}ctx" in _line(75)   # warn >= 65
     assert f"{hot}ctx" in _line(90)    # crit >= 85
 
 

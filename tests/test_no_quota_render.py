@@ -36,7 +36,7 @@ def test_no_quota_off_keeps_quota_bars():
 
 
 def test_no_quota_context_color_uses_claude_hud_thresholds():
-    """Context bar colors on 70/85 (claude-hud), not cs's 30/70 comfort band:
+    """Context bar colors on 65/85, same as cs's unified 65/85 comfort band:
     50% context is calm green, not warning."""
     out = progress.format_status_line(
         msgs_pct=None, tkns_pct=None, reset_time="--", model="Opus 4.8",
@@ -46,7 +46,7 @@ def test_no_quota_context_color_uses_claude_hud_thresholds():
     theme = progress.get_theme("graphite")
     ok = progress._fg(theme.s_ok)
     warn = progress._fg(theme.s_warn)
-    # 50% used → green (below the 70 warn line), never yellow.
+    # 50% used → green (below the 65 warn line), never yellow.
     assert ok in out
     # the ctx label itself must not be painted warning at 50%
     assert f"{warn}ctx" not in out

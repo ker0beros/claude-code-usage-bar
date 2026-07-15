@@ -9,6 +9,25 @@ For a quick overview of the latest release, see the
 
 ---
 
+## Unreleased
+
+### Projection & forecast default off; usage bars standardized to a 65/85 color band
+
+`show_projection` (`→NN%`) and `show_forecast` (`⚠~ETA`) now default to
+**off** — the status line ships calmer out of the box, with both predictive
+signals still fully available via `cs config set show_projection on` /
+`cs config set show_forecast on`. `predict.py` and both toggles are
+unchanged; this is a defaults-only flip.
+
+All three usage bars (5h, 7d, context) now color on one shared band: green
+below 65%, yellow from 65% up to (not including) 85%, red at 85% and above.
+Previously the 5h/7d comfort band was 30/70 and the projection/context bands
+were 70/85 — three different scales for the same visual language. They are
+now unified, reusing the existing severity helpers with no new coloring
+logic.
+
+---
+
 ## v3.29.11 — 2026-07-11
 
 ### AgentParty identity is isolated per session, not per project directory

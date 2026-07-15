@@ -410,12 +410,12 @@ Integration:
     parser.add_argument(
         "--warning-threshold",
         type=float,
-        help="Usage percentage that switches from green to yellow (default: 30)",
+        help="Usage percentage that switches from green to yellow (default: 65)",
     )
     parser.add_argument(
         "--critical-threshold",
         type=float,
-        help="Usage percentage that switches from yellow to red (default: 70)",
+        help="Usage percentage that switches from yellow to red (default: 85)",
     )
     # Defer the imports for choices generation so subcommands that don't
     # touch argparse (config / themes / styles / preview) skip them entirely.

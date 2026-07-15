@@ -14,7 +14,7 @@ current AgentParty channel, identity, listener, unread count, and last-message
 preview from a local cache.
 
 ```
-5h[   27%    ]⏰1h28m →42% | 7d[   79%    ]⏰11h28m →88% | Opus 4.8(350.0k/1.0M) | cache 4m23s
+5h[   27%    ]⏰1h28m | 7d[   79%    ]⏰11h28m | Opus 4.8(350.0k/1.0M) | cache 4m23s
 ```
 
 > 📖 **Deep dive:** [Is that `cache 4m23s` line actually accurate? — how the prompt-cache countdown is computed](https://blog.leeguoo.com/en/posts/claude-statusbar-cache-countdown/)
@@ -64,7 +64,7 @@ Claude Code.
 
 **v3.27.0** (2026-07-03) — **IP-risk detection aligned with ip-check**: China-cloud provider detection and ban-risk threshold handling now match the ip-check.leeguoo.com classifier.
 
-**v3.11.0** (2026-06-02) — **rate-limit projections** (`show_projection`, default on): after each `⏰<reset>` timer the bar shows `→NN%`, your expected end-of-window usage. The 5h model blends recent pace, whole-window average, and a local baseline; the 7d model integrates learned coarse rhythm buckets (work hours, non-work hours, night, weekend) so a busy first day is not blindly extrapolated across the whole week. `show_forecast` remains the separate `⚠<eta>` warning chip for imminent cap hits. Plus: `context_window.used_percentage = null` handled gracefully, and the daemon only renders windows active in the last 10s.
+**v3.11.0** (2026-06-02) — **rate-limit projections** (`show_projection`, default off): after each `⏰<reset>` timer the bar can show `→NN%`, your expected end-of-window usage. The 5h model blends recent pace, whole-window average, and a local baseline; the 7d model integrates learned coarse rhythm buckets (work hours, non-work hours, night, weekend) so a busy first day is not blindly extrapolated across the whole week. `show_forecast` remains the separate `⚠<eta>` warning chip for imminent cap hits, also default off. Plus: `context_window.used_percentage = null` handled gracefully, and the daemon only renders windows active in the last 10s.
 
 **v3.10.0** (2026-06-02) — **live-activity line** (in-progress todo, active tool, completed-tool rollup), **git ahead/behind + session duration/lines** on the project line, **running-subagent** lines, an opt-in **`bar_shimmer`** starfield on the battery bars, and a **self-hosted plugin marketplace**. Plus: auto-update now actually runs in daemon mode (detached, non-blocking), and the cache countdown is per-session-correct. All new segments are opt-in except the todo line.
 
@@ -83,7 +83,7 @@ Claude Code.
 ## What it shows
 
 ```
-5h[   27%    ]⏰1h28m →42% | 7d[   79%    ]⏰11h28m →88% | Opus 4.8(350.0k/1.0M) | cache 4m23s | $ 1.42
+5h[   27%    ]⏰1h28m | 7d[   79%    ]⏰11h28m | Opus 4.8(350.0k/1.0M) | cache 4m23s | $ 1.42
 ⤷ claude-code-usage-bar ⎇ main● · +182 -47 · ⏱ 12m · v3.12.0
 ⚙ effort:high · think:on · fast:off · style:default
 ```
@@ -95,8 +95,8 @@ Claude Code.
 | `⏰1h28m` | Time until the 5-hour window resets |
 | `7d[79%]` | 7-day rate-limit usage |
 | `⏰11h28m` | Time until the 7-day window resets |
-| `→42%` / `→88%` | Projected end-of-window usage at your current rhythm (`show_projection`, on by default). Muted < 80%, yellow ≥ 80%, red ≥ 100%. The 5h model blends recent pace + whole-window average + a local baseline; the 7d model integrates learned day/night/weekend buckets so a busy first day isn't extrapolated across the week. |
-| `⚠~18m` | At-risk warning chip — only when a window is projected to hit 100% **and** the cap is imminent (≤ 1 h). Separate from the projection (`show_forecast`, on by default). |
+| `→42%` / `→88%` | Projected end-of-window usage at your current rhythm (`show_projection`, default **off** — opt in with `cs config set show_projection on`). Muted < 80%, yellow ≥ 80%, red ≥ 100%. The 5h model blends recent pace + whole-window average + a local baseline; the 7d model integrates learned day/night/weekend buckets so a busy first day isn't extrapolated across the week. |
+| `⚠~18m` | At-risk warning chip — only when a window is projected to hit 100% **and** the cap is imminent (≤ 1 h). Separate from the projection (`show_forecast`, default **off** — opt in with `cs config set show_forecast on`). |
 | `Opus 4.8(350.0k/1.0M)` | Model name + current context window usage |
 | `cache 4m23s` / `cache COLD` | Countdown to prompt-cache expiry — the TTL (5min vs 1h) is auto-detected from the transcript, so it's right on a subscription (1h) or an API key (5min). Green when comfortable, yellow under 1min, red on COLD. Cache hits consume ~10× less rate-limit quota — for subscribers, letting it go COLD eats your 5h / 7d windows ~10× faster. Enabled by default; disable with `cs config set show_cache_age false` |
 | `$ 1.42` | Session cost in USD as Claude Code reports it. For Pro/Max subscribers this is the **API-equivalent value** of your usage (i.e. what it would cost on the API), not money owed. Useful as an ROI signal. Opt-in: `cs config set show_cost true` |
@@ -108,7 +108,7 @@ Claude Code.
 | `#agentparty · ⬡ xdream-agent · ◉ serving · 3 unread` + `↳ ●@ bob  shipped the auth patch 2m` | **AgentParty block** (`show_party`, on by default). Local bridge for Codex + AgentParty workflows: reads the workspace status cache and, when several sessions share a project, the identity field from the config path used by that session's actual shell commands. It never calls AgentParty or makes network requests; config tokens are never rendered, logged, or transmitted. The header answers *am I listening* outright — `◉ watching/serving` (green), `⊘ listener down` (red), `◌ not listening` (grey). The last message gets its own line, prefixed `●` unread / `○` read and `@` when it mentions you. |
 | `📚 EN:6.0↑ JA:5.0→` | IELTS band progress (requires [prompt-language-coach](https://github.com/leeguooooo/prompt-language-coach)) |
 
-Colors default to green / yellow / red at `30%` and `70%` — both thresholds configurable.
+Colors default to green / yellow / red at `65%` and `85%` — both thresholds configurable.
 
 ## Claude Code vs Codex support
 
@@ -319,8 +319,8 @@ Persisted to `~/.claude/claude-statusbar.json`:
 | `show_tools` | bool, default `false` | Activity line: the **active tool** (`◐ Edit auth.py` — the newest tool_use with no result yet). MCP names are shortened (`mcp__figma__get_screenshot` → `get_screenshot`). Opt-in. |
 | `show_tool_rollup` | bool, default `false` | Activity line: a frequency rollup of recently-completed tools (`✓ Edit×14 Bash×6 Read×4`). A volume tally rather than a live signal — separate from `show_tools` and off by default. Opt-in. |
 | `bar_shimmer` | bool, default `false` | **Experimental, classic style only.** A faint twinkling starfield in the *empty* part of the 5h/7d battery bars (static high/mid/low dot field + bright `✦`/`✧` stars winking in/out). The fill color is never changed. Capped at the statusLine's ~1Hz refresh, so it's a gentle twinkle, not a smooth animation. Off by default. |
-| `show_projection` | bool, default `true` | Appends an always-visible `→NN%` projection after each 5h/7d reset timer, estimating the percentage expected at reset. The 5h model blends recent pace, whole-window average, and local baseline; the 7d model integrates learned coarse rhythm buckets (work hours, non-work hours, night, weekend) so a busy first day is not blindly extrapolated across the whole week. Disable with `cs config set show_projection false`. |
-| `show_forecast` | bool, default `true` | Controls the separate `⚠~ETA` warning chip. It appears after the projection only when a window is projected to hit 100% before reset and the cap is imminent. Disable with `cs config set show_forecast false`. |
+| `show_projection` | bool, default `false` | Appends a `→NN%` projection after each 5h/7d reset timer, estimating the percentage expected at reset. The 5h model blends recent pace, whole-window average, and local baseline; the 7d model integrates learned coarse rhythm buckets (work hours, non-work hours, night, weekend) so a busy first day is not blindly extrapolated across the whole week. Enable with `cs config set show_projection on`. |
+| `show_forecast` | bool, default `false` | Controls the separate `⚠~ETA` warning chip. It appears after the projection only when a window is projected to hit 100% before reset and the cap is imminent. Enable with `cs config set show_forecast on`. |
 | `show_agents` | bool, default `false` | One **bottom line per running subagent**, e.g. `◐ explore[haiku] 探索 RsaKeyPairPool 2m15s` (multiple agents → multiple lines). Inline agents finish via their tool_result; background (`run_in_background`) agents finish via the queue-operation that carries their tool-use-id. **Off by default because Claude Code already shows background agents in its own native panel** — enabling this largely duplicates that. |
 | `show_duration` | bool, default `false` | **Identity line:** session wall-clock duration as Claude Code reports it (`⏱ 12m`). Already on stdin — no transcript scan. Shows next to the project (needs `show_project_branch` on). Opt-in. |
 | `show_lines` | bool, default `true` | **Identity line:** session lines added/removed as Claude Code reports it (`+182 -47`, +green/−red). This is Claude Code's own cumulative session tally (every Write/Edit), **not a git diff** — it can exceed the net working-tree change. Needs `show_project_branch` on. On by default; disable with `cs config set show_lines false`. |
@@ -341,7 +341,7 @@ capsule     ⛁ CTX 35% ●  ╱  ◆ Opus 4.8  ╱  cache 59m57s
 hairline   › ctx █▃▁ 35% ┊ › Opus 4.8 ┊ cache 59m57s
 ```
 
-The context bar colors on **70% / 85% used** (green → yellow → red), and the model name, prompt-cache countdown, and live-activity tail render as usual. Detection is automatic (`api_mode = auto`); a transcript heuristic also catches relays whose env var didn't propagate to the statusLine subprocess. Force it where auto-detect misses with `cs config set api_mode on` (or `CS_API_MODE=on` per shell); force the official layout back with `api_mode off`. Inspired by [claude-hud](https://github.com/jarrodwatts/claude-hud)'s context-first display.
+The context bar colors on **65% / 85% used** (green → yellow → red), and the model name, prompt-cache countdown, and live-activity tail render as usual. Detection is automatic (`api_mode = auto`); a transcript heuristic also catches relays whose env var didn't propagate to the statusLine subprocess. Force it where auto-detect misses with `cs config set api_mode on` (or `CS_API_MODE=on` per shell); force the official layout back with `api_mode off`. Inspired by [claude-hud](https://github.com/jarrodwatts/claude-hud)'s context-first display.
 
 Override per-invocation via `--style` / `--theme` flags or `CLAUDE_STATUSBAR_STYLE` / `CLAUDE_STATUSBAR_THEME` env vars.
 
@@ -427,8 +427,8 @@ cs config set mode_gradient false # mode line: plain per-tier colours, no gradie
 cs config set show_ahead_behind true  # ↑2↓1 on the project/branch line
 cs config set api_mode on        # force no-quota layout (relay/Bedrock/Vertex; default auto)
 cs config set bar_shimmer true  # experimental: twinkling starfield on the battery bars
-cs config set show_projection false  # hide the →NN% end-of-window projection
-cs config set show_forecast false    # hide the ⚠~eta at-risk warning chip
+cs config set show_projection on  # show the →NN% end-of-window projection (off by default)
+cs config set show_forecast on    # show the ⚠~eta at-risk warning chip (off by default)
 cs config set show_todos false  # hide the todo-progress segment (on by default)
 cs config reset                 # wipe config back to defaults
 
