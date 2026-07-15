@@ -155,11 +155,11 @@ is candidate future work, not yet started.
   2. Context severity shows yellow at ≥70% and red at ≥85%.
   3. The `show_context` toggle (default on) controls it; quota and no-quota modes render context identically.
 
-**Plans**: 2/3 plans executed. SPEC: `docs/superpowers/specs/2026-07-15-context-bar-quota-mode-design.md`
+**Plans**: 3/3 plans executed. SPEC: `docs/superpowers/specs/2026-07-15-context-bar-quota-mode-design.md`
 
 - [x] 06-01-PLAN.md — show_context config toggle (field, persistence, `cs config show`) [Wave 1]
 - [x] 06-02-PLAN.md — per-style ctx bar/pill/mini-bar renderers + severity band [Wave 1]
-- [ ] 06-03-PLAN.md — core + preview integration (drop model suffix, thread show_context) [Wave 2]
+- [x] 06-03-PLAN.md — core + preview integration (drop model suffix, thread show_context) [Wave 2]
 
 ### 📋 Hardening (Planned)
 

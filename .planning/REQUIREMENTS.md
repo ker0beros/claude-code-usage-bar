@@ -58,7 +58,7 @@ Shipped in v3.29.11. Each maps to exactly one delivered roadmap phase.
 
 - [x] **CTX-01**: Context renders as a bar segment in each style's idiom in quota mode (not just a model-name suffix)
 - [x] **CTX-02**: Context severity bands — yellow ≥70%, red ≥85%
-- [ ] **CTX-03**: `show_context` toggle (default on); quota and no-quota modes render context identically
+- [x] **CTX-03**: `show_context` toggle (default on); quota and no-quota modes render context identically
 
 ### Live Activity & Local Bridges (LIVE)
 
@@ -134,9 +134,9 @@ not yet started.
 | PREDICT-03 | Phase 5 | Complete |
 | PREDICT-04 | Phase 5 | Complete |
 | PREDICT-05 | Phase 5 | Complete |
-| CTX-01 | Phase 6 | Active |
-| CTX-02 | Phase 6 | Active |
-| CTX-03 | Phase 6 | Active |
+| CTX-01 | Phase 6 | Complete |
+| CTX-02 | Phase 6 | Complete |
+| CTX-03 | Phase 6 | Complete |
 | LIVE-01 | Phase 7 | Complete |
 | LIVE-02 | Phase 7 | Complete |
 | LIVE-03 | Phase 7 | Complete |

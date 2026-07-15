@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 6
 current_phase_name: Context Window Bar in Quota Mode
 status: executing
-stopped_at: Completed 06-02-PLAN.md (quota-mode ctx bar renderers)
-last_updated: "2026-07-15T05:05:54.832Z"
+stopped_at: Completed 06-03-PLAN.md (core.py/preview.py show_context wiring) — Phase 6 complete
+last_updated: "2026-07-15T13:15:39.000Z"
 last_activity: 2026-07-15
-last_activity_desc: "Executed 06-02-PLAN.md: show_context-gated ctx segment in classic/capsule/hairline quota-mode renderers"
+last_activity_desc: "Executed 06-03-PLAN.md: wired show_context into core.main()'s official-quota + waiting branches and preview.py, closing CTX-01/CTX-03"
 progress:
   total_phases: 9
   completed_phases: 7
-  total_plans: 2
-  completed_plans: 2
+  total_plans: 3
+  completed_plans: 3
   percent: 78
 ---
 
@@ -24,36 +24,36 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-15)
 
 **Core value:** At-a-glance rate-limit / context / model / cost visibility in the Claude Code status line — fast, within budget, zero required deps.
-**Current focus:** Phase 6 — Context Window Bar in Quota Mode (ACTIVE — SPEC written, implementation pending)
+**Current focus:** Phase 6 — Context Window Bar in Quota Mode (all 3 plans complete; CTX-01/CTX-02/CTX-03 closed)
 
 ## Current Position
 
-Phase: 6 of 9 (Context Window Bar in Quota Mode) — ACTIVE. Phases 1–5, 7, 8 delivered in v3.29.11; Phase 9 planned.
-Plan: 2 of 3 in current phase (06-01 config toggle done, 06-02 quota-mode ctx bar renderers done, 06-03 core/preview wiring remains)
-Status: In progress — renderers ready (06-02); core.py/preview.py wiring (06-03) still pending
-Last activity: 2026-07-15 — Executed 06-02-PLAN.md: show_context-gated ctx segment in classic/capsule/hairline quota-mode renderers
+Phase: 6 of 9 (Context Window Bar in Quota Mode) — COMPLETE. Phases 1–5, 7, 8 delivered in v3.29.11; Phase 9 planned.
+Plan: 3 of 3 in current phase (06-01 config toggle done, 06-02 quota-mode ctx bar renderers done, 06-03 core/preview wiring done)
+Status: Phase 6 complete — ctx bar live in quota mode, gated by show_context, off reproduces prior behavior byte-for-byte
+Last activity: 2026-07-15 — Executed 06-03-PLAN.md: wired show_context into core.main()'s official-quota + waiting branches and preview.py
 
-Progress: [███████░░░] 78% (7 of 9 phases delivered; Phase 6 active)
+Progress: [███████░░░] 78% (7 of 9 phases delivered; Phase 6 now complete pending phase close-out)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 2 (Phase 6, GSD-tracked; delivered Phases 1–5/7/8 predate GSD tracking — brownfield ingest)
-- Average duration: ~20min (single data point so far)
-- Total execution time: ~20min (GSD-tracked)
+- Total plans completed: 3 (Phase 6, GSD-tracked; delivered Phases 1–5/7/8 predate GSD tracking — brownfield ingest)
+- Average duration: ~25min (3 data points)
+- Total execution time: ~75min (GSD-tracked)
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1–5, 7, 8 (delivered) | not GSD-tracked | - | - |
-| 6 (active) | 2 of 3 done | 20min | 20min |
+| 6 (complete) | 3 of 3 done | ~75min | ~25min |
 | 9 (planned) | TBD | - | - |
 
 **Recent Trend:**
 
-- Last 5 plans: 06-02 (20min)
+- Last 5 plans: 06-02 (20min), 06-03 (35min)
 - Trend: Stable
 
 *Updated after each plan completion*
@@ -61,6 +61,7 @@ Progress: [███████░░░] 78% (7 of 9 phases delivered; Phase 6
 | Plan | Duration | Tasks | Files |
 |------|----------|-------|-------|
 | Phase 06 P02 | 20min | 2 tasks | 2 files |
+| Phase 06 P03 | 35min | 2 tasks | 4 files (+2 created) |
 
 ## Accumulated Context
 
@@ -73,6 +74,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - Forecast (⚠~ETA) and projection (→NN%) coexist as distinct signals on one predict module.
 - Rate/projection state keyed by account UUID; transcripts read via bounded reverse tail (≤320KB).
 - (06-02) The quota-mode ctx segment reuses the exact no-quota ctx-rendering code path via shared helpers (`_context_dimension()` in progress.py; `ctx_pill()`/`ctx_segment()` closures in styles.py) rather than parallel copies, so quota and no-quota modes are byte-identical by construction.
+- (06-03) core.py's official-quota and waiting branches gate the `(used/size)` model suffix on `cfg.show_context` (append only when off) and pass `show_context=cfg.show_context` into every `_render_style` call; `preview.py` mirrors the same gating and computes `ctx_pct` so `cs preview` matches the live status line.
 
 ### Pending Todos
 
@@ -100,5 +102,5 @@ Items acknowledged and carried forward:
 ## Session Continuity
 
 Last session: 2026-07-15
-Stopped at: Completed 06-02-PLAN.md (quota-mode ctx bar renderers) — 06-03 (core.py/preview.py wiring) remains
+Stopped at: Completed 06-03-PLAN.md (core.py/preview.py show_context wiring) — Phase 6 complete
 Resume file: None
