@@ -154,7 +154,7 @@ def render_capsule(
         return "--%" if p is None else f"{int(round(p))}%"
 
     def ctx_pill():
-        # The CTX pill, colored on context thresholds (70/85), not the
+        # The CTX pill, colored on context thresholds (65/85), not the
         # comfort band. Single source of truth shared by no-quota mode and
         # quota-mode's show_context insertion, so the two render
         # byte-identically for the same ctx_pct.
@@ -202,7 +202,7 @@ def render_capsule(
 
     # Once a CTX pill is on the line (no_quota, or quota-mode show_context)
     # the model pill stays neutral (no redundant context dot). Otherwise the
-    # model dot reflects context fill on the context band (70/85), not the
+    # model dot reflects context fill on the context band (65/85), not the
     # 5h/7d comfort band — otherwise ~35% context shows a yellow dot here
     # while the CTX pill reads green for the identical 35%.
     if ctx_shown:
@@ -283,7 +283,7 @@ def render_hairline(
         return "--%" if p is None else f"{int(round(p)):>2}%"
 
     def ctx_segment():
-        # The ctx mini-bar, colored on context thresholds (70/85). Single
+        # The ctx mini-bar, colored on context thresholds (65/85). Single
         # source of truth shared by no-quota mode and quota-mode's
         # show_context insertion, so the two render byte-identically for the
         # same ctx_pct.
@@ -328,7 +328,7 @@ def render_hairline(
     if ctx_pct is None or ctx_shown:
         model_color = INK
     else:
-        # Context fill uses the context band (70/85), not the 5h/7d comfort
+        # Context fill uses the context band (65/85), not the 5h/7d comfort
         # band — consistent with the no_quota ctx mini-bar above and the other
         # styles. ~35% context must read calm, not warning.
         from .progress import (CONTEXT_WARNING_THRESHOLD as _CW,

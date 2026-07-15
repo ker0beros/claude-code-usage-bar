@@ -524,7 +524,7 @@ Integration:
     use_color = not (args.no_color or no_color_env)
     # Resolve CLI flag > env, leaving None when neither is set so core.main()
     # falls through to the persisted config value (CLI > env > config > default).
-    # Passing a normalized 30/70 here would shadow `cs config set`.
+    # Passing a normalized 65/85 here would shadow `cs config set`.
     warning_threshold = (
         args.warning_threshold
         if args.warning_threshold is not None

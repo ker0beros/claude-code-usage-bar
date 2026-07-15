@@ -421,7 +421,7 @@ def _forecast_color(chip: str, theme):
 
 
 def _projection_color(chip: str, theme):
-    """`→NN%` end-of-window projection chip: hot ≥85%, warn ≥70%, else muted —
+    """`→NN%` end-of-window projection chip: hot ≥85%, warn ≥65%, else muted —
     the same red/yellow lines the window bar uses (window_severity_rgb), so the
     chip and the bar it sits next to never disagree. Below the warn line the
     chip stays muted (an unalarming projection), where the bar goes green.
@@ -635,7 +635,7 @@ def format_status_line(
         model_color = ink
     else:
         # The model name reflects context-window fill, so it must use the
-        # context band (70/85), NOT the 5h/7d comfort band — otherwise ~35%
+        # context band (65/85), NOT the 5h/7d comfort band — otherwise ~35%
         # context paints the model name yellow here while the identical 35%
         # reads green on the no-quota ctx bar. Same metric, one threshold.
         model_color = color_for_percent(
