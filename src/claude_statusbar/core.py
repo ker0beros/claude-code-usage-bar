@@ -392,9 +392,20 @@ def relay_balance(env: Dict[str, str], *, spawn: bool = True):
     Never blocks on the network: the probe always runs in a separate process,
     exactly like the git dirty-state refresh.
     """
+    # base_url is per-session relay-detection state and IS stamped into the
+    # per-session env — read it from `env` ONLY (never fall back to os.environ,
+    # or a non-relay session could inherit the daemon's base and wrongly show a
+    # relay gauge). The secret key/auth are deliberately NOT stamped into that
+    # env (render_thin persists it to disk), so fall them back to os.environ —
+    # the documented pattern (see the `_get` fallback ~L704): the daemon
+    # inherits these global vars from settings.json env / the shell profile
+    # anyway. Without this fallback the gauge never rendered under the shared
+    # daemon (the guard below tripped because key/auth were always empty).
     base = (env.get("ANTHROPIC_BASE_URL") or "").strip()
-    key = (env.get("ANTHROPIC_API_KEY") or "").strip()
-    auth = (env.get("ANTHROPIC_AUTH_TOKEN") or "").strip()
+    key = (env.get("ANTHROPIC_API_KEY")
+           or os.environ.get("ANTHROPIC_API_KEY") or "").strip()
+    auth = (env.get("ANTHROPIC_AUTH_TOKEN")
+            or os.environ.get("ANTHROPIC_AUTH_TOKEN") or "").strip()
     if not base or not (key or auth):
         return None
 

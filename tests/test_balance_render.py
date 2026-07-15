@@ -137,3 +137,48 @@ def test_balance_bar_off_falls_back_to_text(tmp_path, monkeypatch):
         balance_text="bal $809.95", balance_pct=None)
     assert "bal $809.95" in out
     assert "bal[" not in out
+
+
+# --- env sourcing: key/auth fall back to os.environ, base stays session-only ---
+
+def test_relay_key_falls_back_to_os_environ_when_absent_from_session_env(
+    tmp_path, monkeypatch
+):
+    """Regression: under the shared daemon, relay_balance() is handed the
+    per-session env (`_cs_env`), which carries ANTHROPIC_BASE_URL but NOT the
+    secret key (secrets aren't stamped — that env is persisted to disk). The
+    key must fall back to os.environ (which the daemon inherits), else the guard
+    trips and the `bal $…` gauge never renders live. Mirrors the search-credit
+    fix (a7571e1); `base` stays session-only (next test)."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    base, key = "https://relay.example", "sk-relay"
+    # The relay key lives ONLY in os.environ — never in the session env.
+    monkeypatch.setenv("ANTHROPIC_API_KEY", key)
+    monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
+    fp = balance_cache.fingerprint(base, key)
+    balance_cache.write_cache_atomic(
+        fp, {"ts": time.time(), "supported": True, "balance": 42.5})
+    # What the daemon render passes: base stamped, key ABSENT.
+    session_env = {"ANTHROPIC_BASE_URL": base, "CS_API_MODE": "auto"}
+    entry = core.relay_balance(session_env, spawn=False)
+    assert entry is not None and entry.get("balance") == 42.5
+
+
+def test_relay_base_does_not_fall_back_to_os_environ(tmp_path, monkeypatch):
+    """`base` is per-session relay-detection state and must come from the
+    session env ONLY. A session that is NOT on a relay (no base in its env) must
+    not inherit the daemon's os.environ base and wrongly show a relay gauge —
+    even when a matching balance cache exists."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    base, key = "https://relay.example", "sk-relay"
+    # Both base AND key live in os.environ (the daemon's env)...
+    monkeypatch.setenv("ANTHROPIC_BASE_URL", base)
+    monkeypatch.setenv("ANTHROPIC_API_KEY", key)
+    # ...and a fresh supported cache exists that WOULD be returned if base
+    # wrongly fell back to os.environ.
+    fp = balance_cache.fingerprint(base, key)
+    balance_cache.write_cache_atomic(
+        fp, {"ts": time.time(), "supported": True, "balance": 99.0})
+    # But this is a non-relay session: no ANTHROPIC_BASE_URL stamped.
+    session_env = {"CS_API_MODE": "auto"}
+    assert core.relay_balance(session_env, spawn=False) is None
