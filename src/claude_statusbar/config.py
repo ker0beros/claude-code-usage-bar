@@ -97,6 +97,10 @@ class StatusbarConfig:
     # segment and the model, dropping the model's `(used/size)` suffix and neutral
     # -coloring the model name. Default on; off restores today's suffix-only look.
     show_context: bool = True
+    # Search-provider credit bars (Firecrawl `fc` / Tavily `tv` mini fuel-gauge
+    # bars): opt-in, default off — reads FIRECRAWL_API_KEY / TAVILY_API_KEY and
+    # makes a third-party call via a detached prober (see provider_usage.py).
+    show_search_credits: bool = False
     cache_ttl_seconds: int = DEFAULT_CACHE_TTL_SECONDS  # deprecated; auto-detected now
     # No-quota mode: drop the 5h/7d quota bars and promote context when official
     # quota is unavailable (third-party relay via ANTHROPIC_BASE_URL, Bedrock,
@@ -160,6 +164,7 @@ def load_config(path: Optional[Path] = None) -> StatusbarConfig:
         show_forecast=_to_bool(raw.get("show_forecast", False)),
         show_projection=_to_bool(raw.get("show_projection", False)),
         show_context=_to_bool(raw.get("show_context", True)),
+        show_search_credits=_to_bool(raw.get("show_search_credits", False)),
         cache_ttl_seconds=int(raw.get("cache_ttl_seconds", DEFAULT_CACHE_TTL_SECONDS) or DEFAULT_CACHE_TTL_SECONDS),
         api_mode=str(raw.get("api_mode", DEFAULT_API_MODE)),
         warning_threshold=raw.get("warning_threshold"),
@@ -187,6 +192,7 @@ VALID_KEYS = {
     "show_ip_risk", "show_fp_risk",
     "show_duration", "show_lines", "show_ahead_behind", "show_version",
     "bar_shimmer", "show_forecast", "show_projection", "show_context",
+    "show_search_credits",
     "show_mode", "mode_gradient",
     "cache_ttl_seconds", "api_mode",
     "warning_threshold", "critical_threshold",
@@ -202,6 +208,7 @@ _BOOL_KEYS = {"show_weekly", "show_language", "show_cost", "show_balance",
               "show_ip_risk", "show_fp_risk",
               "show_duration", "show_lines", "show_ahead_behind", "show_version",
               "bar_shimmer", "show_forecast", "show_projection", "show_context",
+              "show_search_credits",
               "show_mode", "mode_gradient"}
 _FLOAT_KEYS = {"warning_threshold", "critical_threshold"}
 _INT_KEYS = {"auto_compact_width", "cache_ttl_seconds"}

@@ -62,6 +62,7 @@ def _run_config_subcommand(rest):
         print(f"show_forecast       = {cfg.show_forecast}")
         print(f"show_projection     = {cfg.show_projection}")
         print(f"show_context        = {cfg.show_context}")
+        print(f"show_search_credits = {cfg.show_search_credits}")
         print(f"cache_ttl_seconds   = {cfg.cache_ttl_seconds}")
         print(f"warning_threshold   = {cfg.warning_threshold}")
         print(f"critical_threshold  = {cfg.critical_threshold}")

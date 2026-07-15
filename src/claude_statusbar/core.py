@@ -1208,6 +1208,21 @@ def main(json_output: bool = False,
         except Exception:
             pass
 
+    # Search-provider credit bars (Firecrawl `fc` / Tavily `tv`): opt-in,
+    # default off. ensure_fresh() spawns the detached prober when a
+    # provider's cache is stale; segments() reads cache only (never blocks).
+    # Wired into ALL FOUR _render_style() branches below.
+    search_kwargs = {}
+    if cfg.show_search_credits:
+        try:
+            from . import provider_usage
+            provider_usage.ensure_fresh(_effective_env)
+            segs = provider_usage.segments(_effective_env)
+            if segs:
+                search_kwargs = {"search_credits": segs}
+        except Exception:
+            pass
+
     # Optional session-mode line (⚙): effort / thinking / fast / output-style,
     # straight from stdin. Each field is omitted by the renderer when absent.
     mode_kwargs = {}
@@ -1316,7 +1331,7 @@ def main(json_output: bool = False,
                     balance_pct=balance_pct,
                     balance_amount=balance_amount,
                     **identity_kwargs, **cwd_kwargs, **party_kwargs, **mode_kwargs, **ip_line_kwargs, **fp_line_kwargs,
-                    **activity_kwargs,
+                    **activity_kwargs, **search_kwargs,
                 ))
         elif has_official:
             # ✅ Official data from Anthropic API headers (Claude Code ≥ v2.1.80)
@@ -1450,7 +1465,7 @@ def main(json_output: bool = False,
                     **projection_kwargs,
                     **forecast_kwargs,
                     **identity_kwargs, **cwd_kwargs, **party_kwargs, **mode_kwargs, **ip_line_kwargs, **fp_line_kwargs,
-                    **activity_kwargs,
+                    **activity_kwargs, **search_kwargs,
                 ))
         else:
             # No rate_limits yet — could be session start or old Claude Code
@@ -1508,7 +1523,7 @@ def main(json_output: bool = False,
                         quota_stale=quota_stale,
                         show_context=cfg.show_context,
                         **identity_kwargs, **cwd_kwargs, **party_kwargs, **mode_kwargs, **ip_line_kwargs, **fp_line_kwargs,
-                        **activity_kwargs,
+                        **activity_kwargs, **search_kwargs,
                     ))
             else:
                 # No stdin at all — not running inside Claude Code statusLine
@@ -1540,6 +1555,7 @@ def main(json_output: bool = False,
                 critical_threshold=critical_threshold,
                 density=cfg.density, show_weekly=cfg.show_weekly,
                 **identity_kwargs, **cwd_kwargs, **party_kwargs, **mode_kwargs, **ip_line_kwargs, **fp_line_kwargs,
+                **search_kwargs,
             ))
 
 if __name__ == '__main__':

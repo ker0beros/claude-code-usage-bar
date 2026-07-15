@@ -131,9 +131,10 @@ def render_capsule(
     balance_text: str = "",
     timer_elapsed_5h=None,
     timer_elapsed_7d=None,
+    search_credits=None,
     **_ignored,
 ) -> str:
-    from .progress import timer_severity_rgb, window_severity_rgb
+    from .progress import timer_severity_rgb, window_severity_rgb, _balance_fill_rgb
     theme = theme or get_theme("graphite")
     INK    = _fg(theme.pill_ink)
     EDGE   = _fg(theme.edge)
@@ -235,6 +236,10 @@ def render_capsule(
     if cost_text:
         parts.append(pill(theme.pill_cost, f"$ {cost_text}"))
 
+    for entry in (search_credits or []):
+        fill = _balance_fill_rgb(entry.get("pct"), theme)
+        parts.append(pill(fill, entry.get("text", "")))
+
     if lang_body:
         parts.append(pill(theme.pill_lang, f"📚 {lang_body}"))
 
@@ -270,9 +275,10 @@ def render_hairline(
     balance_text: str = "",
     timer_elapsed_5h=None,
     timer_elapsed_7d=None,
+    search_credits=None,
     **_ignored,
 ) -> str:
-    from .progress import timer_severity_rgb, window_severity_rgb
+    from .progress import timer_severity_rgb, window_severity_rgb, _balance_fill_rgb
     theme = theme or get_theme("graphite")
     INK  = _fg(theme.ink)
     MUTE = _fg(theme.mute)
@@ -366,6 +372,10 @@ def render_hairline(
     if cost_text:
         parts.append(f"{MUTE}$ {INK}{cost_text}{RESET}")
 
+    for entry in (search_credits or []):
+        fill = _balance_fill_rgb(entry.get("pct"), theme)
+        parts.append(f"{_fg(fill)}{entry.get('text', '')}{RESET}")
+
     if lang_body:
         parts.append(f"{MUTE}{lang_body}{RESET}")
 
@@ -405,6 +415,7 @@ def render_classic(
     quota_stale: bool = False,
     timer_elapsed_5h=None,
     timer_elapsed_7d=None,
+    search_credits=None,
     **_ignored,
 ) -> str:
     from .progress import format_status_line, _fg, colorize, RESET
@@ -438,6 +449,7 @@ def render_classic(
         quota_stale=quota_stale,
         timer_elapsed_5h=timer_elapsed_5h,
         timer_elapsed_7d=timer_elapsed_7d,
+        search_credits=search_credits,
     )
     if cache_age_text:
         # Three-level severity: COLD red, <1m yellow, otherwise green.

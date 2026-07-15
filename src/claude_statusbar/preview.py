@@ -99,7 +99,20 @@ def _real_data(show_context: bool = False) -> Optional[dict]:
                                 cost.get("total_lines_removed", 0)),
         timer_elapsed_5h=_timer_elapsed(fh.get("resets_at"), TIMER_5H_WINDOW_S),
         timer_elapsed_7d=_timer_elapsed(sd.get("resets_at"), TIMER_7D_WINDOW_S),
+        search_credits=_real_search_credits(),
     )
+
+
+def _real_search_credits() -> Optional[list]:
+    """Best-effort live search-provider credits (mirrors core.main's
+    show_search_credits wiring): reads cache only via segments(), never
+    spawns. Omitted on any failure so preview degrades gracefully."""
+    try:
+        import os
+        from . import provider_usage
+        return provider_usage.segments(os.environ) or None
+    except Exception:
+        return None
 
 
 def _demo_data(show_context: bool = False) -> dict:
@@ -131,6 +144,12 @@ def _demo_data(show_context: bool = False) -> dict:
         # so the demo timer renders a real (non-fallback) color.
         timer_elapsed_5h=31.0,
         timer_elapsed_7d=21.0,
+        search_credits=[
+            {"label": "fc", "pct": 82.0, "text": "fc 82%",
+             "remaining": 820, "limit": 1000},
+            {"label": "tv", "pct": 18.0, "text": "tv 18%",
+             "remaining": 180, "limit": 1000},
+        ],
     )
 
 
@@ -220,6 +239,7 @@ def run(use_color: bool = True, theme_filter: Optional[str] = None,
                 ctx_pct=data.get("ctx_pct"), show_context=show_context,
                 timer_elapsed_5h=data.get("timer_elapsed_5h"),
                 timer_elapsed_7d=data.get("timer_elapsed_7d"),
+                search_credits=data.get("search_credits"),
             )
             print(f"  {DIM}[theme-agnostic]{R} {line}")
             continue
@@ -239,6 +259,7 @@ def run(use_color: bool = True, theme_filter: Optional[str] = None,
                 ctx_pct=data.get("ctx_pct"), show_context=show_context,
                 timer_elapsed_5h=data.get("timer_elapsed_5h"),
                 timer_elapsed_7d=data.get("timer_elapsed_7d"),
+                search_credits=data.get("search_credits"),
             )
             print(f"  {DIM}[{theme.name:<9}]{R} {line}")
     print()
