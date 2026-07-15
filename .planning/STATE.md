@@ -6,9 +6,9 @@ current_phase: 6
 current_phase_name: Context Window Bar in Quota Mode
 status: phase-complete
 stopped_at: Phase 6 complete + verified (06-VERIFICATION.md, 8/8 must-haves, 936/936 tests) — implemented, unreleased
-last_updated: "2026-07-15T07:40:00.000Z"
+last_updated: "2026-07-15T10:35:00.000Z"
 last_activity: 2026-07-15
-last_activity_desc: "Quick task 260715-lm1: reset-timer countdowns now color by elapsed% on a fixed 65/85 band (5h flipped green-when-fresh, 7d normal red-when-late), decoupled from the bar; 34 new tests, full suite green (pre-existing version_sync failure deferred)"
+last_activity_desc: "Quick task 260715-pic: opt-in search-provider credit bars (Firecrawl fc + Tavily tv, default off) — detached prober + TTL/negative cache cloning ip_risk + balance_cache; render path never touches the network; 52 new tests, full suite 1021 passed (1 pre-existing version_sync failure deferred); verified 7/7 must-haves"
 progress:
   total_phases: 9
   completed_phases: 8
@@ -77,6 +77,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - (06-03) core.py's official-quota and waiting branches gate the `(used/size)` model suffix on `cfg.show_context` (append only when off) and pass `show_context=cfg.show_context` into every `_render_style` call; `preview.py` mirrors the same gating and computes `ctx_pct` so `cs preview` matches the live status line.
 - (260715-jbf) `show_projection`/`show_forecast` now default off (config-only flip; `predict.py` and both toggles untouched). All three usage bars (5h/7d/ctx) now share one unified 65/85 color band via `progress.py`'s four band constants, reusing the existing severity helpers with no new coloring logic.
 - (260715-lm1) Reset-timer `⏰` countdowns now color by **elapsed % of the window** on a fixed 65/85 band that is the timer's OWN (`TIMER_WARNING_THRESHOLD`/`TIMER_CRITICAL_THRESHOLD` in `progress.py`, never the bar's configurable thresholds). Polarity flips per window: 5h FLIPPED (near reset → green, fresh quota imminent), 7d NORMAL (near reset → red, week running out). One shared helper `timer_severity_rgb(elapsed_pct, *, flip, theme)` drives classic/capsule/hairline + preview; bar fill/label and the ✨/⚡/🎉 emoji untouched; core computes elapsed% in the quota branch only (waiting/stale/custom-reset_hour fall back to prior color).
+- (260715-pic) Opt-in `show_search_credits` (default off) surfaces remaining API credits for search providers as per-provider mini fuel-gauge bars (`fc` Firecrawl, `tv` Tavily), each shown only when its env key (`FIRECRAWL_API_KEY`/`TAVILY_API_KEY`) is present. New `provider_usage.py` + `_provider_usage_refresh.py` clone the ip_risk opt-in signal + balance_cache mechanics: render path reads cache only and NEVER touches the network; a detached `urllib` prober (Firecrawl `/v2/team/credit-usage`, Tavily `/usage`, Bearer auth) is the sole spawn path (TTL 300s/neg 3600s/inflight 60s), keys fingerprinted (sha1, never on disk). Reuses `_build_dimension`/`_balance_fill_rgb` (25/10 remaining thresholds); wired into all 4 `_render_style` branches + daemon heartbeat. Stdlib-only, zero new deps. Exa deferred (no remaining-balance API).
 
 ### Quick Tasks Completed
 
@@ -84,6 +85,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 |---------|------|---------|---------|
 | 260715-jbf | 2026-07-15 | Projection/forecast chips default-off; standardized 5h/7d/ctx bars to one 65/85 color band | 3cd54f7, 2b36824, 1dacffc |
 | 260715-lm1 | 2026-07-15 | Reset-timer countdowns color by elapsed% on a fixed 65/85 band (5h flipped green-when-fresh, 7d normal red-when-late), decoupled from the bar's thresholds; 34 new tests | b28e836, c2427d5, 79bcd6d |
+| 260715-pic | 2026-07-15 | Opt-in search-provider credit bars (Firecrawl `fc` + Tavily `tv`), default off; detached prober + TTL/negative cache clones ip_risk + balance_cache; render path never touches the network; 52 new tests | 3640e0e, 3dee232, 9265e55 |
 
 ### Pending Todos
 
@@ -107,9 +109,11 @@ Items acknowledged and carried forward:
 |----------|------|--------|-------------|
 | Hardening | Daemon health-check + cache-repair commands (HARD-01/02) | Planned (Phase 9) | 2026-07-15 |
 | Hardening | Error-handler logging + module splits (HARD-03/04/05) | Planned (Phase 9) | 2026-07-15 |
+| Search credits | Exa credit bar — no remaining-balance API (dashboard-only); needs a user-entered starting balance/limit + polled spend subtraction, or a spend-only chip | Deferred | 2026-07-15 |
+| Search credits | Reset-countdown for Firecrawl `billingPeriodEnd` (could reuse the reset-timer elapsed% coloring work, 260715-lm1) | Deferred | 2026-07-15 |
 
 ## Session Continuity
 
 Last session: 2026-07-15
-Stopped at: Completed quick task 260715-lm1 (reset-timer countdowns color by elapsed% on a fixed 65/85 band, 5h flipped / 7d normal, decoupled from the bar) — 34 new tests, 969/970 passing (1 pre-existing version_sync failure deferred). Follow-up (fast): added a space on each side of the classic-style ⏰ clock icon (` ⏰ {time}`).
+Stopped at: Completed quick task 260715-pic (opt-in Firecrawl+Tavily search-provider credit bars, default off; detached prober + TTL/negative cache; render path network-free) — 52 new tests, full suite 1021 passed (1 pre-existing version_sync failure deferred); verified 7/7 must-haves.
 Resume file: None
