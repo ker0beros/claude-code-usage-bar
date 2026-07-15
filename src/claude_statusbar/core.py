@@ -1336,6 +1336,8 @@ def main(json_output: bool = False,
             except Exception:
                 pass
 
+            from . import progress
+
             if resets_at:
                 diff = datetime.fromtimestamp(resets_at, tz=timezone.utc) - datetime.now(timezone.utc)
                 total_min = max(0, int(diff.total_seconds() / 60))
@@ -1345,9 +1347,12 @@ def main(json_output: bool = False,
                     reset_time = f"{hours}h{mins:02d}m"
                 else:
                     reset_time = f"{mins}m"
+                timer_elapsed_5h = progress.timer_elapsed_pct(
+                    diff.total_seconds(), progress.TIMER_5H_WINDOW_S)
             else:
                 reset_time = "--"
                 minutes_to_reset = None
+                timer_elapsed_5h = None
 
             if resets_at_7d:
                 diff_7d = datetime.fromtimestamp(resets_at_7d, tz=timezone.utc) - datetime.now(timezone.utc)
@@ -1361,8 +1366,11 @@ def main(json_output: bool = False,
                     reset_time_7d = f"{hours_7d}h{mins_7d:02d}m"
                 else:
                     reset_time_7d = f"{mins_7d}m"
+                timer_elapsed_7d = progress.timer_elapsed_pct(
+                    diff_7d.total_seconds(), progress.TIMER_7D_WINDOW_S)
             else:
                 reset_time_7d = ""
+                timer_elapsed_7d = None
 
             model = display_name if display_name != 'Unknown' else model_id
 
@@ -1437,6 +1445,8 @@ def main(json_output: bool = False,
                     ctx_pct=ctx_pct,
                     shimmer_phase=shimmer_phase,
                     show_context=cfg.show_context,
+                    timer_elapsed_5h=timer_elapsed_5h,
+                    timer_elapsed_7d=timer_elapsed_7d,
                     **projection_kwargs,
                     **forecast_kwargs,
                     **identity_kwargs, **cwd_kwargs, **party_kwargs, **mode_kwargs, **ip_line_kwargs, **fp_line_kwargs,

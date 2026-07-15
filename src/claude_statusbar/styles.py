@@ -129,9 +129,11 @@ def render_capsule(
     no_quota: bool = False,
     show_context: bool = False,
     balance_text: str = "",
+    timer_elapsed_5h=None,
+    timer_elapsed_7d=None,
     **_ignored,
 ) -> str:
-    from .progress import window_severity_rgb
+    from .progress import timer_severity_rgb, window_severity_rgb
     theme = theme or get_theme("graphite")
     INK    = _fg(theme.pill_ink)
     EDGE   = _fg(theme.edge)
@@ -149,6 +151,16 @@ def render_capsule(
         if rgb is None:
             return ""
         return f" {_fg(rgb)}●{RESET}"
+
+    def timer_color_wrap(elapsed, flip):
+        # Colors the ⏰-equivalent reset text by elapsed% on the fixed 65/85
+        # timer band (never the bar's warning/critical_threshold above).
+        # Returns ("", "") when elapsed is undefined so the pill stays
+        # byte-identical to prior output (reset text stays plain INK).
+        rgb = timer_severity_rgb(elapsed, flip=flip, theme=theme)
+        if rgb is None:
+            return "", ""
+        return _fg(rgb), INK
 
     def pct_text(p):
         return "--%" if p is None else f"{int(round(p))}%"
@@ -181,16 +193,18 @@ def render_capsule(
         # No official quota: a single CTX pill replaces the 5H/7D pills.
         parts.append(ctx_pill())
     else:
+        t5_pre, t5_post = timer_color_wrap(timer_elapsed_5h, True)
         five_body = (
             f"{BOLD}◷ 5H{RESET}{INK}{_bg(theme.pill_5h)} {pct_text(msgs_pct)} "
-            f"· {reset_5h}{sev_dot(msgs_pct, projection_5h)}{INK}{_bg(theme.pill_5h)}"
+            f"· {t5_pre}{reset_5h}{t5_post}{sev_dot(msgs_pct, projection_5h)}{INK}{_bg(theme.pill_5h)}"
         )
         parts.append(pill(theme.pill_5h, five_body))
 
         if show_weekly:
+            t7_pre, t7_post = timer_color_wrap(timer_elapsed_7d, False)
             week_body = (
                 f"{BOLD}☷ 7D{RESET}{INK}{_bg(theme.pill_7d)} {pct_text(weekly_pct)} "
-                f"· {reset_7d or '--'}{sev_dot(weekly_pct, projection_7d)}{INK}{_bg(theme.pill_7d)}"
+                f"· {t7_pre}{reset_7d or '--'}{t7_post}{sev_dot(weekly_pct, projection_7d)}{INK}{_bg(theme.pill_7d)}"
             )
             parts.append(pill(theme.pill_7d, week_body))
 
@@ -254,9 +268,11 @@ def render_hairline(
     no_quota: bool = False,
     show_context: bool = False,
     balance_text: str = "",
+    timer_elapsed_5h=None,
+    timer_elapsed_7d=None,
     **_ignored,
 ) -> str:
-    from .progress import window_severity_rgb
+    from .progress import timer_severity_rgb, window_severity_rgb
     theme = theme or get_theme("graphite")
     INK  = _fg(theme.ink)
     MUTE = _fg(theme.mute)
@@ -307,14 +323,22 @@ def render_hairline(
         # No official quota: a single ctx mini-bar replaces the 5h/7d segments.
         parts.append(ctx_segment())
     else:
+        # Timer text colors by elapsed% on the fixed 65/85 timer band (never
+        # the bar's warning/critical_threshold above); falls back to MUTE —
+        # visually identical to the prior always-mute reset text — when
+        # elapsed is undefined.
+        t5_rgb = timer_severity_rgb(timer_elapsed_5h, flip=True, theme=theme)
+        t5_col = _fg(t5_rgb) if t5_rgb is not None else MUTE
         parts.append(
             f"{MUTE}› 5h{RESET} {mini3(msgs_pct, projection_5h)} {INK}{pct_text(msgs_pct)}{RESET} "
-            f"{MUTE}↺ {reset_5h}{RESET}"
+            f"{MUTE}↺ {RESET}{t5_col}{reset_5h}{RESET}"
         )
         if show_weekly:
+            t7_rgb = timer_severity_rgb(timer_elapsed_7d, flip=False, theme=theme)
+            t7_col = _fg(t7_rgb) if t7_rgb is not None else MUTE
             parts.append(
                 f"{MUTE}› 7d{RESET} {mini3(weekly_pct, projection_7d)} {INK}{pct_text(weekly_pct)}{RESET} "
-                f"{MUTE}↺ {reset_7d or '--'}{RESET}"
+                f"{MUTE}↺ {RESET}{t7_col}{reset_7d or '--'}{RESET}"
             )
         # LOCKED "Layout" decision (06-CONTEXT.md): in quota mode the ctx
         # segment sits between the 7d segment (or 5h, when show_weekly is
@@ -379,6 +403,8 @@ def render_classic(
     balance_pct=None,
     balance_amount: str = "",
     quota_stale: bool = False,
+    timer_elapsed_5h=None,
+    timer_elapsed_7d=None,
     **_ignored,
 ) -> str:
     from .progress import format_status_line, _fg, colorize, RESET
@@ -410,6 +436,8 @@ def render_classic(
         balance_pct=balance_pct,
         balance_amount=balance_amount,
         quota_stale=quota_stale,
+        timer_elapsed_5h=timer_elapsed_5h,
+        timer_elapsed_7d=timer_elapsed_7d,
     )
     if cache_age_text:
         # Three-level severity: COLD red, <1m yellow, otherwise green.

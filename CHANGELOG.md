@@ -11,6 +11,11 @@ For a quick overview of the latest release, see the
 
 ## Unreleased
 
+- Reset-timer countdowns (`⏰`) now color by elapsed% of their own window on a
+  fixed 65/85 band, independent of the bar's thresholds — 5h flipped (green
+  when fresh, i.e. a short countdown), 7d normal (red when late, i.e. a short
+  countdown means the window is running out).
+
 ---
 
 ## v3.30.0 — 2026-07-15

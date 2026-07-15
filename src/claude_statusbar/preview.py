@@ -34,6 +34,17 @@ def _fmt_reset(ts: Optional[int]) -> str:
     return f"{m}m"
 
 
+def _timer_elapsed(ts: Optional[int], window_s: int) -> Optional[float]:
+    """Elapsed% of a reset window from a raw `resets_at` unix timestamp —
+    mirrors core.main's live computation so `cs preview` matches the live
+    status line for the same data. None when `ts` is falsy (absent reset)."""
+    from .progress import timer_elapsed_pct
+    if not ts:
+        return None
+    diff = datetime.fromtimestamp(ts, tz=timezone.utc) - datetime.now(timezone.utc)
+    return timer_elapsed_pct(diff.total_seconds(), window_s)
+
+
 def _real_data(show_context: bool = False) -> Optional[dict]:
     try:
         raw = json.loads(CACHED_STDIN.read_text(encoding="utf-8"))
@@ -71,6 +82,8 @@ def _real_data(show_context: bool = False) -> Optional[dict]:
     tp = raw.get("transcript_path", "")
     activity = read_activity(tp) if tp else None
 
+    from .progress import TIMER_5H_WINDOW_S, TIMER_7D_WINDOW_S
+
     return dict(
         msgs_pct=int(round(fh.get("used_percentage", 0))),
         weekly_pct=int(round(sd.get("used_percentage", 0))),
@@ -84,6 +97,8 @@ def _real_data(show_context: bool = False) -> Optional[dict]:
         duration_text=format_duration_short(cost.get("total_duration_ms", 0)),
         lines_text=format_lines(cost.get("total_lines_added", 0),
                                 cost.get("total_lines_removed", 0)),
+        timer_elapsed_5h=_timer_elapsed(fh.get("resets_at"), TIMER_5H_WINDOW_S),
+        timer_elapsed_7d=_timer_elapsed(sd.get("resets_at"), TIMER_7D_WINDOW_S),
     )
 
 
@@ -112,6 +127,10 @@ def _demo_data(show_context: bool = False) -> dict:
         ),
         duration_text="12m",
         lines_text="+182 -47",
+        # Elapsed% consistent with the "3h28m" / "5d12h" reset strings above,
+        # so the demo timer renders a real (non-fallback) color.
+        timer_elapsed_5h=31.0,
+        timer_elapsed_7d=21.0,
     )
 
 
@@ -199,6 +218,8 @@ def run(use_color: bool = True, theme_filter: Optional[str] = None,
                 warning_threshold=65.0, critical_threshold=85.0,
                 activity=data.get("activity"), activity_opts=act_opts,
                 ctx_pct=data.get("ctx_pct"), show_context=show_context,
+                timer_elapsed_5h=data.get("timer_elapsed_5h"),
+                timer_elapsed_7d=data.get("timer_elapsed_7d"),
             )
             print(f"  {DIM}[theme-agnostic]{R} {line}")
             continue
@@ -216,6 +237,8 @@ def run(use_color: bool = True, theme_filter: Optional[str] = None,
                 warning_threshold=65.0, critical_threshold=85.0,
                 activity=data.get("activity"), activity_opts=act_opts,
                 ctx_pct=data.get("ctx_pct"), show_context=show_context,
+                timer_elapsed_5h=data.get("timer_elapsed_5h"),
+                timer_elapsed_7d=data.get("timer_elapsed_7d"),
             )
             print(f"  {DIM}[{theme.name:<9}]{R} {line}")
     print()
