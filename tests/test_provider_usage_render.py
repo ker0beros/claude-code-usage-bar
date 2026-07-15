@@ -11,50 +11,75 @@ _ENTRIES = [
 ]
 
 
-# --- classic: battery via format_status_line ---
+# --- classic: battery via render_classic (the real production path) ---
+# fc/tv now render on their OWN row below the primary quota line, so these
+# tests drive styles.render_classic (not format_status_line directly, which
+# no longer renders fc/tv inline) and assert placement on the second line.
 
 def test_classic_search_credit_battery_no_quota():
-    out = progress.format_status_line(
-        msgs_pct=None, tkns_pct=None, reset_time="--", model="qwen-max",
-        ctx_pct=0, no_quota=True, use_color=False,
+    out = styles.render_classic(
+        msgs_pct=None, weekly_pct=None, reset_5h="--", reset_7d="",
+        model="qwen-max", ctx_pct=0, no_quota=True, use_color=False,
         search_credits=_ENTRIES)
     assert "fc[" in out
     assert "82%" in out
     assert "tv[" in out
     assert "18%" in out
+    first, _, rest = out.partition("\n")
+    assert "fc[" in rest and "fc[" not in first
 
 
 def test_classic_search_credit_battery_quota_mode():
-    out = progress.format_status_line(
-        msgs_pct=42, tkns_pct=None, reset_time="3h", model="Opus 4.7",
-        weekly_pct=18, reset_time_7d="5d",
+    out = styles.render_classic(
+        msgs_pct=42, weekly_pct=18, reset_5h="3h", reset_7d="5d",
+        model="Opus 4.7",
         use_color=False, search_credits=_ENTRIES)
     assert "fc[" in out and "82%" in out
+    first, _, rest = out.partition("\n")
+    assert "fc[" in rest and "fc[" not in first
 
 
 def test_classic_search_credit_battery_stale_mode():
-    out = progress.format_status_line(
-        msgs_pct=None, tkns_pct=None, reset_time="--", model="Opus 4.7",
-        weekly_pct=None, quota_stale=True, use_color=False,
+    out = styles.render_classic(
+        msgs_pct=None, weekly_pct=None, reset_5h="--", reset_7d="",
+        model="Opus 4.7", quota_stale=True, use_color=False,
         search_credits=_ENTRIES)
     assert "fc[" in out and "82%" in out
+    first, _, rest = out.partition("\n")
+    assert "fc[" in rest and "fc[" not in first
 
 
 def test_classic_empty_search_credits_renders_nothing():
-    out = progress.format_status_line(
-        msgs_pct=None, tkns_pct=None, reset_time="--", model="qwen-max",
-        ctx_pct=0, no_quota=True, use_color=False,
+    out = styles.render_classic(
+        msgs_pct=None, weekly_pct=None, reset_5h="--", reset_7d="",
+        model="qwen-max", ctx_pct=0, no_quota=True, use_color=False,
         search_credits=[])
     assert "fc" not in out
     assert "tv" not in out
+    assert "\n" not in out
 
 
 def test_classic_none_search_credits_renders_nothing():
-    out = progress.format_status_line(
-        msgs_pct=None, tkns_pct=None, reset_time="--", model="qwen-max",
-        ctx_pct=0, no_quota=True, use_color=False,
+    out = styles.render_classic(
+        msgs_pct=None, weekly_pct=None, reset_5h="--", reset_7d="",
+        model="qwen-max", ctx_pct=0, no_quota=True, use_color=False,
         search_credits=None)
     assert "fc[" not in out
+    assert "\n" not in out
+
+
+def test_classic_cache_age_stays_on_quota_line():
+    """Guards the critical interaction: cache-age must stay on the primary
+    (first) line even when fc/tv are present — never pushed onto the
+    fc/tv row below."""
+    out = styles.render_classic(
+        msgs_pct=42, weekly_pct=18, reset_5h="3h", reset_7d="5d",
+        model="Opus 4.7", cache_age_text="5m", use_color=False,
+        search_credits=_ENTRIES)
+    first, _, rest = out.partition("\n")
+    assert "cache 5m" in first
+    assert "fc[" in rest
+    assert "cache" not in rest
 
 
 # --- capsule / hairline: severity-colored chips ---
@@ -66,6 +91,8 @@ def test_capsule_search_credit_chip():
         search_credits=_ENTRIES)
     assert "fc 82%" in out
     assert "tv 18%" in out
+    first, _, rest = out.partition("\n")
+    assert "fc 82%" in rest and "fc 82%" not in first
 
 
 def test_hairline_search_credit_chip():
@@ -75,6 +102,8 @@ def test_hairline_search_credit_chip():
         search_credits=_ENTRIES)
     assert "fc 82%" in out
     assert "tv 18%" in out
+    first, _, rest = out.partition("\n")
+    assert "fc 82%" in rest and "fc 82%" not in first
 
 
 def test_capsule_empty_search_credits_renders_nothing():
