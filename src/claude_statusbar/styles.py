@@ -127,6 +127,7 @@ def render_capsule(
     projection_5h: str = "",
     projection_7d: str = "",
     no_quota: bool = False,
+    show_context: bool = False,
     balance_text: str = "",
     **_ignored,
 ) -> str:
@@ -152,13 +153,11 @@ def render_capsule(
     def pct_text(p):
         return "--%" if p is None else f"{int(round(p))}%"
 
-    spacer = f"{EDGE} ╱{RESET} "
-
-    parts = []
-
-    if no_quota:
-        # No official quota: a single CTX pill replaces the 5H/7D pills,
-        # colored on context thresholds (claude-hud's 70/85), not the comfort band.
+    def ctx_pill():
+        # The CTX pill, colored on context thresholds (70/85), not the
+        # comfort band. Single source of truth shared by no-quota mode and
+        # quota-mode's show_context insertion, so the two render
+        # byte-identically for the same ctx_pct.
         from .progress import (CONTEXT_WARNING_THRESHOLD as _CW,
                                CONTEXT_CRITICAL_THRESHOLD as _CC)
         ctx_rgb = _severity_color(theme, ctx_pct, _CW, _CC)
@@ -167,7 +166,20 @@ def render_capsule(
             f"{BOLD}⛁ CTX{RESET}{INK}{_bg(theme.pill_5h)} {pct_text(ctx_pct)}"
             f"{ctx_dot}{INK}{_bg(theme.pill_5h)}"
         )
-        parts.append(pill(theme.pill_5h, ctx_body))
+        return pill(theme.pill_5h, ctx_body)
+
+    spacer = f"{EDGE} ╱{RESET} "
+
+    parts = []
+
+    # The bar carries context severity once it's drawn — either the no_quota
+    # CTX pill (always) or the quota-mode show_context insertion below (only
+    # when ctx data is available).
+    ctx_shown = no_quota or (show_context and ctx_pct is not None)
+
+    if no_quota:
+        # No official quota: a single CTX pill replaces the 5H/7D pills.
+        parts.append(ctx_pill())
     else:
         five_body = (
             f"{BOLD}◷ 5H{RESET}{INK}{_bg(theme.pill_5h)} {pct_text(msgs_pct)} "
@@ -182,12 +194,18 @@ def render_capsule(
             )
             parts.append(pill(theme.pill_7d, week_body))
 
-    # In no_quota mode the CTX pill already carries the context severity, so the
-    # model pill stays neutral (no second ctx dot). In quota mode the model dot
-    # reflects context fill and must use the context band (70/85), not the 5h/7d
-    # comfort band — otherwise ~35% context shows a yellow dot here while the
-    # no-quota CTX pill reads green for the identical 35%.
-    if no_quota:
+        # LOCKED "Layout" decision (06-CONTEXT.md): in quota mode the ctx bar
+        # sits between the 7d pill (or 5h, when show_weekly is off) and the
+        # model — inserting it here after the quota pills achieves that.
+        if show_context and ctx_pct is not None:
+            parts.append(ctx_pill())
+
+    # Once a CTX pill is on the line (no_quota, or quota-mode show_context)
+    # the model pill stays neutral (no redundant context dot). Otherwise the
+    # model dot reflects context fill on the context band (70/85), not the
+    # 5h/7d comfort band — otherwise ~35% context shows a yellow dot here
+    # while the CTX pill reads green for the identical 35%.
+    if ctx_shown:
         model_sev = ""
     else:
         from .progress import (window_severity_rgb as _wsr,
@@ -234,6 +252,7 @@ def render_hairline(
     projection_5h: str = "",
     projection_7d: str = "",
     no_quota: bool = False,
+    show_context: bool = False,
     balance_text: str = "",
     **_ignored,
 ) -> str:
@@ -263,19 +282,30 @@ def render_hairline(
     def pct_text(p):
         return "--%" if p is None else f"{int(round(p)):>2}%"
 
+    def ctx_segment():
+        # The ctx mini-bar, colored on context thresholds (70/85). Single
+        # source of truth shared by no-quota mode and quota-mode's
+        # show_context insertion, so the two render byte-identically for the
+        # same ctx_pct.
+        from .progress import (CONTEXT_WARNING_THRESHOLD as _CW,
+                               CONTEXT_CRITICAL_THRESHOLD as _CC)
+        return (
+            f"{MUTE}› ctx{RESET} {mini3(ctx_pct, warn=_CW, crit=_CC)} "
+            f"{INK}{pct_text(ctx_pct)}{RESET}"
+        )
+
     sep_pad = DENSITY_PAD.get(density, " ")
     sep = f"{sep_pad}{EDGE}┊{RESET}{sep_pad}"
     parts = []
 
+    # The bar carries context severity once it's drawn — either the no_quota
+    # ctx mini-bar (always) or the quota-mode show_context insertion below
+    # (only when ctx data is available).
+    ctx_shown = no_quota or (show_context and ctx_pct is not None)
+
     if no_quota:
-        # No official quota: a single ctx mini-bar replaces the 5h/7d segments,
-        # colored on context thresholds (claude-hud's 70/85).
-        from .progress import (CONTEXT_WARNING_THRESHOLD as _CW,
-                               CONTEXT_CRITICAL_THRESHOLD as _CC)
-        parts.append(
-            f"{MUTE}› ctx{RESET} {mini3(ctx_pct, warn=_CW, crit=_CC)} "
-            f"{INK}{pct_text(ctx_pct)}{RESET}"
-        )
+        # No official quota: a single ctx mini-bar replaces the 5h/7d segments.
+        parts.append(ctx_segment())
     else:
         parts.append(
             f"{MUTE}› 5h{RESET} {mini3(msgs_pct, projection_5h)} {INK}{pct_text(msgs_pct)}{RESET} "
@@ -286,9 +316,16 @@ def render_hairline(
                 f"{MUTE}› 7d{RESET} {mini3(weekly_pct, projection_7d)} {INK}{pct_text(weekly_pct)}{RESET} "
                 f"{MUTE}↺ {reset_7d or '--'}{RESET}"
             )
-    # Model line — colored by ctx_pct severity, neutral ink when absent. In
-    # no_quota mode the ctx mini-bar already carries severity, so stay neutral.
-    if ctx_pct is None or no_quota:
+        # LOCKED "Layout" decision (06-CONTEXT.md): in quota mode the ctx
+        # segment sits between the 7d segment (or 5h, when show_weekly is
+        # off) and the model — inserting it here after the quota segments
+        # achieves that.
+        if show_context and ctx_pct is not None:
+            parts.append(ctx_segment())
+    # Model line — colored by ctx_pct severity, neutral ink when absent. Once
+    # a ctx segment is on the line (no_quota, or quota-mode show_context) it
+    # already carries severity, so the model stays neutral.
+    if ctx_pct is None or ctx_shown:
         model_color = INK
     else:
         # Context fill uses the context band (70/85), not the 5h/7d comfort
@@ -337,6 +374,7 @@ def render_classic(
     forecast_5h: str = "",
     forecast_7d: str = "",
     no_quota: bool = False,
+    show_context: bool = False,
     balance_text: str = "",
     balance_pct=None,
     balance_amount: str = "",
@@ -367,6 +405,7 @@ def render_classic(
         forecast_5h=forecast_5h,
         forecast_7d=forecast_7d,
         no_quota=no_quota,
+        show_context=show_context,
         balance_text=balance_text,
         balance_pct=balance_pct,
         balance_amount=balance_amount,
