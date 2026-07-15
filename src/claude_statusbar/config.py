@@ -87,11 +87,12 @@ class StatusbarConfig:
     # so it's a slow step, not smooth. Default off; classic style only.
     bar_shimmer: bool = False
     # When on, shows the at-risk `⚠<eta>` warning chip when projected to hit the
-    # cap before reset.
-    show_forecast: bool = True
+    # cap before reset. Default off — opt in via `cs config set show_forecast on`.
+    show_forecast: bool = False
     # When on, shows each window's projected end-of-window usage (`→NN%`) after
-    # its reset timer. Separate from the warning chip above.
-    show_projection: bool = True
+    # its reset timer. Separate from the warning chip above. Default off — opt
+    # in via `cs config set show_projection on`.
+    show_projection: bool = False
     # Quota-mode context bar (#CTX-03): draws the ctx bar/segment between the 7d
     # segment and the model, dropping the model's `(used/size)` suffix and neutral
     # -coloring the model name. Default on; off restores today's suffix-only look.
@@ -156,8 +157,8 @@ def load_config(path: Optional[Path] = None) -> StatusbarConfig:
         show_mode=_to_bool(raw.get("show_mode", True)),
         mode_gradient=_to_bool(raw.get("mode_gradient", True)),
         bar_shimmer=_to_bool(raw.get("bar_shimmer", False)),
-        show_forecast=_to_bool(raw.get("show_forecast", True)),
-        show_projection=_to_bool(raw.get("show_projection", True)),
+        show_forecast=_to_bool(raw.get("show_forecast", False)),
+        show_projection=_to_bool(raw.get("show_projection", False)),
         show_context=_to_bool(raw.get("show_context", True)),
         cache_ttl_seconds=int(raw.get("cache_ttl_seconds", DEFAULT_CACHE_TTL_SECONDS) or DEFAULT_CACHE_TTL_SECONDS),
         api_mode=str(raw.get("api_mode", DEFAULT_API_MODE)),
