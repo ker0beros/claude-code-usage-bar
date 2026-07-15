@@ -1,0 +1,13 @@
+{
+  "source_path": "/Users/khairulazmi/Documents/claude-code-usage-bar/docs/superpowers/specs/2026-05-21-project-branch-segment-design.md",
+  "type": "SPEC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "Project + branch identity segment — design",
+  "summary": "Technical design for an opt-in second status-bar line showing project and git branch identity with dirty-state indicator.",
+  "scope": ["status bar", "identity segment", "project name", "git branch", "dirty state", "statusLine", "core.py parse_stdin_data"],
+  "cross_refs": ["https://code.claude.com/docs/en/statusline#display-multiple-lines"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

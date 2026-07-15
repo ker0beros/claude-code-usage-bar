@@ -1,0 +1,13 @@
+{
+  "source_path": "/Users/khairulazmi/Documents/claude-code-usage-bar/docs/superpowers/plans/2026-05-07-per-segment-color-management.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "Per-segment color management + classic theme adoption — implementation plan",
+  "summary": "Task-by-task implementation plan for per-segment severity coloring and classic-style theme adoption in the statusbar renderer.",
+  "scope": ["progress.py", "themes.py", "styles.py", "core.py", "preview.py", "per-segment coloring", "classic theme adoption"],
+  "cross_refs": ["docs/superpowers/specs/2026-05-07-per-segment-color-management-design.md"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

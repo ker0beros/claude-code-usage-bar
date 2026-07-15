@@ -1,0 +1,13 @@
+{
+  "source_path": "/Users/khairulazmi/Documents/claude-code-usage-bar/docs/superpowers/plans/2026-03-25-rate-limit-redesign.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "Rate-Limit Focused Redesign Implementation Plan",
+  "summary": "Task-by-task implementation plan to replace the status bar with a dual-progress-bar, rate-limit-focused format for Max subscribers.",
+  "scope": ["status bar", "progress bar rendering", "cache layer", "claude-monitor", "statusline", "CLI"],
+  "cross_refs": ["docs/superpowers/specs/2026-03-25-rate-limit-focused-redesign.md"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

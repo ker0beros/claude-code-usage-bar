@@ -1,0 +1,16 @@
+{
+  "source_path": "/Users/khairulazmi/Documents/claude-code-usage-bar/docs/hn-prepared-answers.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "HN prepared answers",
+  "summary": "Copy-paste reply templates for likely Show HN comments about the Claude Code usage statusLine tool.",
+  "scope": ["Show HN messaging", "ccusage comparison", "daemon mode", "privacy/network egress", "Windows support"],
+  "cross_refs": [
+    "https://github.com/leeguooooo/claude-code-usage-bar/blob/main/src/claude_statusbar/updater.py",
+    "https://docs.claude.com/en/docs/claude-code/statusline"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

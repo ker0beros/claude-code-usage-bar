@@ -1,0 +1,13 @@
+{
+  "source_path": "/Users/khairulazmi/Documents/claude-code-usage-bar/docs/upstream-fr-statusline-focused-agent.md",
+  "type": "DOC",
+  "confidence": "medium",
+  "manifest_override": false,
+  "title": "statusLine: expose the focused subagent's model/context when viewing an agent pane",
+  "summary": "Draft upstream feature request asking Claude Code to add a focused_agent field to the statusLine payload so status reflects the focused subagent pane.",
+  "scope": ["statusLine payload", "focused subagent pane", "per-agent model/context data", "Claude Code"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": "Prose feature-request draft aimed at anthropics/claude-code. Contains a proposed JSON payload snippet but no acceptance criteria, user stories, or decision/consequences — no PRD/SPEC/ADR signals dominant. Classified as DOC (context). Includes an example payload schema which weakly hints SPEC, hence medium confidence."
+}

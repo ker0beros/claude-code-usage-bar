@@ -1,0 +1,13 @@
+{
+  "source_path": "/Users/khairulazmi/Documents/claude-code-usage-bar/docs/superpowers/plans/2026-06-02-rate-limit-projection-model.md",
+  "type": "SPEC",
+  "confidence": "medium",
+  "manifest_override": false,
+  "title": "Rate-limit Projection Model Implementation Plan",
+  "summary": "Implementation plan for 5h/7d rate-limit end-of-window projection chips that learn from local usage history, with config, render, and metrics wiring.",
+  "scope": ["rate-limit projection", "predict.py", "config.py", "core.py", "progress.py", "styles.py", "statusbar chips"],
+  "cross_refs": ["src/claude_statusbar/predict.py", "src/claude_statusbar/config.py", "src/claude_statusbar/cli.py", "src/claude_statusbar/core.py", "src/claude_statusbar/progress.py", "src/claude_statusbar/styles.py", "README.md", "CHANGELOG.md", "tests/test_projection.py", "tests/test_forecast_render.py"],
+  "locked": false,
+  "precedence": null,
+  "notes": "Implementation plan with architecture, file-level contracts, code snippets, and task steps -> SPEC (how it is built). Not an ADR (no Decision/Consequences status) nor PRD (no user stories/acceptance criteria). Confidence medium: 'plan' framing could be read as DOC, but dominant signals are technical build contracts."
+}

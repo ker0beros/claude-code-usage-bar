@@ -1,0 +1,13 @@
+{
+  "source_path": "/Users/khairulazmi/Documents/claude-code-usage-bar/docs/superpowers/specs/2026-06-02-rate-limit-projection-learning-design.md",
+  "type": "SPEC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "Rate-limit projection model — design",
+  "summary": "Technical design for an always-on projection system estimating end-of-window usage percentages for 5h/7d rate-limit windows with accuracy logging.",
+  "scope": ["rate-limit projection", "5h window", "7d window", "projection snapshots", "accuracy measurement", "show_projection config", "⚠~ETA chip coexistence"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

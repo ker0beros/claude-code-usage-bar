@@ -1,0 +1,13 @@
+{
+  "source_path": "/Users/khairulazmi/Documents/claude-code-usage-bar/docs/superpowers/specs/2026-06-02-rate-limit-forecast-design.md",
+  "type": "SPEC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "Rate-limit forecast chip — design",
+  "summary": "Technical design for an on-bar forecast chip showing estimated time-to-limit for 5h/7d rate-limit windows at current burn rate.",
+  "scope": ["rate-limit forecast chip", "five_hour window", "seven_day window", "burn rate projection", "show_forecast config", "classic style bar"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

@@ -1,0 +1,13 @@
+{
+  "source_path": "/Users/khairulazmi/Documents/claude-code-usage-bar/docs/superpowers/specs/2026-03-25-rate-limit-focused-redesign.md",
+  "type": "SPEC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "Rate-Limit Focused Status Bar Redesign",
+  "summary": "Technical spec for a dual progress-bar status line showing message/token rate-limit usage, reset countdown, model, and bypass indicator.",
+  "scope": ["status bar", "progress bar", "rate limit", "color thresholds", "claude-monitor", "statusLine", "bypass permissions"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

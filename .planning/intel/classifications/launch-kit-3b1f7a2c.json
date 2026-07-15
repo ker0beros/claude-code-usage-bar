@@ -1,0 +1,13 @@
+{
+  "source_path": "/Users/khairulazmi/Documents/claude-code-usage-bar/docs/launch-kit.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "Launch kit",
+  "summary": "Copy-paste marketing materials (X, Reddit, HN, ProductHunt, blog) and launch checklist for promoting the claude-statusbar tool.",
+  "scope": ["claude-statusbar", "product launch", "marketing copy", "hero GIF", "launch checklist"],
+  "cross_refs": ["docs/images/hero.gif", "docs/images/hero.svg", "scripts/hero.tape", "scripts/build-hero-gif.sh"],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

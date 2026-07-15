@@ -1,0 +1,13 @@
+{
+  "source_path": "/Users/khairulazmi/Documents/claude-code-usage-bar/docs/superpowers/specs/2026-07-15-context-bar-quota-mode-design.md",
+  "type": "SPEC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "Context window as a bar in quota mode",
+  "summary": "Technical design for rendering the context window as a style-idiomatic bar segment in quota mode, with a show_context toggle.",
+  "scope": ["claude_statusbar", "context bar", "quota mode", "styles rendering", "show_context config", "classic/capsule/hairline styles"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

@@ -1,0 +1,13 @@
+{
+  "source_path": "/Users/khairulazmi/Documents/claude-code-usage-bar/docs/superpowers/specs/2026-05-07-per-segment-color-management-design.md",
+  "type": "SPEC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "Per-segment color management + classic theme adoption — design",
+  "summary": "Technical design for per-segment color/severity scoping and theme-driven palette adoption across classic, capsule, and hairline status-bar styles.",
+  "scope": ["progress.py", "themes.py", "format_status_line", "classic style", "capsule style", "hairline style", "per-segment color", "severity thresholds", "context severity", "theme.pill_cost"],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}
