@@ -385,6 +385,19 @@ def _search_credit_parts(search_credits, theme, use_color):
     return parts
 
 
+def format_search_credit_line(search_credits, theme=None, use_color=True):
+    """Render the fc/tv search-credit batteries as their OWN status-line row
+    (joined by the same muted ' | ' separator the primary line uses — the
+    classic idiom). Returns "" for a falsy/empty list so callers can append
+    unconditionally (``result += "\\n" + credit_row`` only when truthy)."""
+    theme = theme or get_theme("graphite")
+    parts = _search_credit_parts(search_credits, theme, use_color)
+    if not parts:
+        return ""
+    separator = colorize(" | ", _fg(theme.mute), use_color)
+    return separator.join(parts)
+
+
 def _context_dimension(ctx_pct, theme, use_color, shimmer_phase=None):
     """The reusable ``ctx[…NN%…]`` battery-bar segment (classic style),
     colored on the context band (CONTEXT_WARNING_THRESHOLD /
@@ -590,6 +603,11 @@ def format_status_line(
     model by ctx_pct (None => neutral theme.ink). Separator and brackets
     use theme.mute. (used/size) parens muted, numbers stay severity.
 
+    ``search_credits`` is accepted for signature stability but is now inert
+    here: fc/tv render on their own row via the style renderer's
+    ``format_search_credit_line`` (see styles.render_classic), not inline
+    on this primary line.
+
     When ``no_quota`` is True (third-party relay / Bedrock / Vertex — no official
     5h/7d quota), the two quota bars are dropped and the context window is
     promoted to its own ``ctx[…]`` battery bar instead (claude-hud-style),
@@ -630,7 +648,6 @@ def format_status_line(
             parts.append(colorize(f"$ {cost_text}", ink, use_color))
         if lang_text:
             parts.append(lang_text)
-        parts.extend(_search_credit_parts(search_credits, theme, use_color))
         if bypass:
             parts.append(colorize("⚠️BYPASS", _fg(theme.s_hot), use_color))
         separator = colorize(" | ", mute, use_color)
@@ -655,7 +672,6 @@ def format_status_line(
             parts.append(colorize(f"$ {cost_text}", ink, use_color))
         if lang_text:
             parts.append(lang_text)
-        parts.extend(_search_credit_parts(search_credits, theme, use_color))
         if bypass:
             parts.append(colorize("⚠️BYPASS", _fg(theme.s_hot), use_color))
         separator = colorize(" | ", mute, use_color)
@@ -735,7 +751,6 @@ def format_status_line(
         parts.append(colorize(f"$ {cost_text}", ink, use_color))
     if lang_text:
         parts.append(lang_text)
-    parts.extend(_search_credit_parts(search_credits, theme, use_color))
     if bypass:
         parts.append(colorize("⚠️BYPASS", _fg(theme.s_hot), use_color))
 

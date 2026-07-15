@@ -236,10 +236,6 @@ def render_capsule(
     if cost_text:
         parts.append(pill(theme.pill_cost, f"$ {cost_text}"))
 
-    for entry in (search_credits or []):
-        fill = _balance_fill_rgb(entry.get("pct"), theme)
-        parts.append(pill(fill, entry.get("text", "")))
-
     if lang_body:
         parts.append(pill(theme.pill_lang, f"📚 {lang_body}"))
 
@@ -251,6 +247,16 @@ def render_capsule(
 
     if bypass:
         line += f"  {_fg(theme.s_hot)}{BOLD}⚠ BYPASS{RESET}"
+
+    # fc/tv render on their OWN row below the primary pills, in the same
+    # pill idiom, joined by the same spacer — added before the no-color
+    # strip so the whole multi-line string is stripped together.
+    credit_pills = [
+        pill(_balance_fill_rgb(entry.get("pct"), theme), entry.get("text", ""))
+        for entry in (search_credits or [])
+    ]
+    if credit_pills:
+        line += "\n" + spacer.join(credit_pills)
 
     if not use_color:
         return _strip(line)
@@ -372,10 +378,6 @@ def render_hairline(
     if cost_text:
         parts.append(f"{MUTE}$ {INK}{cost_text}{RESET}")
 
-    for entry in (search_credits or []):
-        fill = _balance_fill_rgb(entry.get("pct"), theme)
-        parts.append(f"{_fg(fill)}{entry.get('text', '')}{RESET}")
-
     if lang_body:
         parts.append(f"{MUTE}{lang_body}{RESET}")
 
@@ -387,6 +389,17 @@ def render_hairline(
         parts.append(f"{_fg(theme.s_hot)}{BOLD}⚠ BYPASS{RESET}")
 
     line = sep.join(parts)
+
+    # fc/tv render on their OWN row below the primary segments, in the same
+    # chip idiom, joined by the same sep — added before the no-color strip
+    # so the whole multi-line string is stripped together.
+    credit_chips = [
+        f"{_fg(_balance_fill_rgb(entry.get('pct'), theme))}{entry.get('text', '')}{RESET}"
+        for entry in (search_credits or [])
+    ]
+    if credit_chips:
+        line += "\n" + sep.join(credit_chips)
+
     if not use_color:
         return _strip(line)
     return line
@@ -418,7 +431,7 @@ def render_classic(
     search_credits=None,
     **_ignored,
 ) -> str:
-    from .progress import format_status_line, _fg, colorize, RESET
+    from .progress import format_status_line, format_search_credit_line, _fg, colorize, RESET
     theme = theme or get_theme("graphite")
     lang_text = (
         colorize(f"📚 {lang_body}", _fg(theme.s_ok), use_color)
@@ -449,7 +462,6 @@ def render_classic(
         quota_stale=quota_stale,
         timer_elapsed_5h=timer_elapsed_5h,
         timer_elapsed_7d=timer_elapsed_7d,
-        search_credits=search_credits,
     )
     if cache_age_text:
         # Three-level severity: COLD red, <1m yellow, otherwise green.
@@ -462,6 +474,11 @@ def render_classic(
         mute = _fg(theme.mute)
         reset = RESET if use_color else ""  # don't leak a bare RESET in no-color mode
         result += f"{reset}{colorize(' | ', mute, use_color)}{colorize(f'cache {cache_age_text}', col, use_color)}"
+    # fc/tv render on their OWN row, strictly AFTER the cache-age suffix above,
+    # so cache-age is guaranteed to stay on the primary line no matter what.
+    credit_row = format_search_credit_line(search_credits, theme, use_color)
+    if credit_row:
+        result += "\n" + credit_row
     return result
 
 
