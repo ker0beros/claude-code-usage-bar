@@ -71,5 +71,5 @@ def test_explicit_arg_overrides_config(tmp_path, monkeypatch):
 
 def test_default_thresholds_when_unset(tmp_path, monkeypatch):
     cap = _run_capture(tmp_path, monkeypatch, {})
-    assert cap["warn"] == 30.0
-    assert cap["crit"] == 70.0
+    assert cap["warn"] == 65.0
+    assert cap["crit"] == 85.0

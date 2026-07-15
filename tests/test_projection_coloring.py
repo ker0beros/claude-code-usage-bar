@@ -56,11 +56,11 @@ def test_projection_just_below_crit_is_warn():
 
 
 def test_projection_at_warn_boundary_is_warn():
-    assert window_severity_rgb(5, "→70%", THEME) == THEME.s_warn
+    assert window_severity_rgb(5, "→65%", THEME) == THEME.s_warn
 
 
 def test_projection_just_below_warn_is_green():
-    assert window_severity_rgb(5, "→69%", THEME) == THEME.s_ok
+    assert window_severity_rgb(5, "→64%", THEME) == THEME.s_ok
 
 
 def test_projection_at_cap_is_hot():
@@ -68,17 +68,17 @@ def test_projection_at_cap_is_hot():
     assert window_severity_rgb(50, "→100%", THEME) == THEME.s_hot
 
 
-def test_projection_thresholds_are_70_85():
-    assert PROJECTION_WARNING_THRESHOLD == 70.0
+def test_projection_thresholds_are_65_85():
+    assert PROJECTION_WARNING_THRESHOLD == 65.0
     assert PROJECTION_CRITICAL_THRESHOLD == 85.0
 
 
 # ── fallback to current usage when no projection ────────────────────────────
 def test_no_projection_falls_back_to_current_usage():
-    # →-- placeholder: legacy semantics on configured 30/70 thresholds.
-    assert window_severity_rgb(75, "→--", THEME) == THEME.s_hot   # 75 ≥ 70
-    assert window_severity_rgb(30, "→--", THEME) == THEME.s_warn  # 30 ≥ 30
-    assert window_severity_rgb(10, "→--", THEME) == THEME.s_ok    # 10 < 30
+    # →-- placeholder: legacy semantics on configured 65/85 thresholds.
+    assert window_severity_rgb(75, "→--", THEME) == THEME.s_warn  # 65 <= 75 < 85
+    assert window_severity_rgb(30, "→--", THEME) == THEME.s_ok    # 30 < 65
+    assert window_severity_rgb(10, "→--", THEME) == THEME.s_ok    # 10 < 65
 
 
 def test_no_projection_respects_custom_thresholds():

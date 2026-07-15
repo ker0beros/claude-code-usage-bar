@@ -21,7 +21,7 @@ def test_per_segment_severity_isolation():
     no warning ANSI appears around the 5h segment."""
     line = format_status_line(
         msgs_pct=10, tkns_pct=None, reset_time="2h00m",
-        weekly_pct=50, reset_time_7d="3d00h",
+        weekly_pct=70, reset_time_7d="3d00h",
         model="Opus 4.7", ctx_pct=None,
         theme=GRAPHITE, use_color=True,
     )

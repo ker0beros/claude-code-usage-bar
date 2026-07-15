@@ -11,26 +11,26 @@ FILL = "█"
 EMPTY = "░"
 RESET = "\033[0m"
 
-DEFAULT_WARNING_THRESHOLD = 30.0
-DEFAULT_CRITICAL_THRESHOLD = 70.0
+DEFAULT_WARNING_THRESHOLD = 65.0
+DEFAULT_CRITICAL_THRESHOLD = 85.0
 
 # Rate-limit windows (5h / 7d) color by where they're HEADED, not where they
 # are right now: once a `→NN%` end-of-window projection exists, the cap (100%)
-# is the red line and near-cap is the warning. These are distinct from the
-# configurable comfort thresholds above, which still drive the current-usage
-# fallback (before a projection exists) and non-projected gauges like the
-# context window. Red starts well below the cap on purpose: a projection of
-# 85%+ means you're essentially going to run the window out (the chip clamps at
-# 100, so "→99%" sits there for ages on the slow 7d window — it should read as
-# alarming, not merely warm).
-PROJECTION_WARNING_THRESHOLD = 70.0
+# is the red line and near-cap is the warning. These share the same 65/85
+# band as the configurable comfort thresholds above, which still drive the
+# current-usage fallback (before a projection exists) and non-projected
+# gauges like the context window. Red starts well below the cap on purpose: a
+# projection of 85%+ means you're essentially going to run the window out
+# (the chip clamps at 100, so "→99%" sits there for ages on the slow 7d
+# window — it should read as alarming, not merely warm).
+PROJECTION_WARNING_THRESHOLD = 65.0
 PROJECTION_CRITICAL_THRESHOLD = 85.0
 
-# Context-window bar (no-quota mode) uses claude-hud's thresholds — warn 70 /
-# crit 85 on used% — NOT the 5h/7d comfort band. Context filling toward
-# auto-compact is only concerning near the top, so 30% used must read calm
-# (green), not warning. Borrowed verbatim from claude-hud's getContextColor.
-CONTEXT_WARNING_THRESHOLD = 70.0
+# Context-window bar (no-quota mode) uses the same unified band — warn 65 /
+# crit 85 on used% — as the 5h/7d comfort band, so all three usage bars read
+# on one shared scale. Context filling toward auto-compact is only concerning
+# near the top, so 30% used must read calm (green), not warning.
+CONTEXT_WARNING_THRESHOLD = 65.0
 CONTEXT_CRITICAL_THRESHOLD = 85.0
 
 # Relay-balance fuel gauge colors on *remaining* %, not used: full is green,

@@ -48,16 +48,18 @@ def test_color_safe():
     assert color_for_percent(20, theme=_TH) == GREEN_FG
 
 def test_color_warning():
-    assert color_for_percent(50, theme=_TH) == YELLOW_FG
+    assert color_for_percent(50, theme=_TH) == GREEN_FG
 
 def test_color_critical():
-    assert color_for_percent(80, theme=_TH) == RED_FG
+    assert color_for_percent(80, theme=_TH) == YELLOW_FG
 
-def test_color_boundary_30():
-    assert color_for_percent(30, theme=_TH) == YELLOW_FG
+def test_color_boundary_65():
+    assert color_for_percent(65, theme=_TH) == YELLOW_FG
+    assert color_for_percent(64, theme=_TH) == GREEN_FG
 
-def test_color_boundary_70():
-    assert color_for_percent(70, theme=_TH) == RED_FG
+def test_color_boundary_85():
+    assert color_for_percent(85, theme=_TH) == RED_FG
+    assert color_for_percent(84, theme=_TH) == YELLOW_FG
 
 def test_color_custom_thresholds():
     assert color_for_percent(39, theme=_TH, warning_threshold=40, critical_threshold=80) == GREEN_FG
@@ -324,10 +326,10 @@ def test_battery_bar_single_filled_cell_keeps_pure_severity_color():
 
 
 # ---------------------------------------------------------------------------
-# Context % must color the model name with the context band (70/85), not the
-# 5h/7d comfort band (30/70). Regression: a session at ~35% context used to
-# paint the model name yellow in quota mode while the no-quota ctx bar read
-# green for the identical 35%.
+# Context % must color the model name with the context band (65/85), same as
+# the unified 5h/7d comfort band (65/85). Regression: a session at ~35%
+# context used to paint the model name yellow in quota mode while the
+# no-quota ctx bar read green for the identical 35%.
 # ---------------------------------------------------------------------------
 from claude_statusbar.progress import _fg as _fg_code
 
@@ -342,7 +344,7 @@ def _quota_line(ctx_pct):
 
 
 def test_ctx_model_color_calm_below_context_warning():
-    # 35% context is well under the 70 context-warning → no yellow anywhere.
+    # 35% context is well under the 65 context-warning → no yellow anywhere.
     out = _quota_line(35)
     assert _fg_code(_TH.s_warn) not in out
     assert _fg_code(_TH.s_hot) not in out
@@ -350,7 +352,7 @@ def test_ctx_model_color_calm_below_context_warning():
 
 
 def test_ctx_model_color_warns_at_context_band():
-    # 75% context is in the 70–85 context-warning band → model yellow.
+    # 75% context is in the 65–85 context-warning band → model yellow.
     out = _quota_line(75)
     assert _fg_code(_TH.s_warn) in out
 
