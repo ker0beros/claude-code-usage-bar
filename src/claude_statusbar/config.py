@@ -92,6 +92,10 @@ class StatusbarConfig:
     # When on, shows each window's projected end-of-window usage (`→NN%`) after
     # its reset timer. Separate from the warning chip above.
     show_projection: bool = True
+    # Quota-mode context bar (#CTX-03): draws the ctx bar/segment between the 7d
+    # segment and the model, dropping the model's `(used/size)` suffix and neutral
+    # -coloring the model name. Default on; off restores today's suffix-only look.
+    show_context: bool = True
     cache_ttl_seconds: int = DEFAULT_CACHE_TTL_SECONDS  # deprecated; auto-detected now
     # No-quota mode: drop the 5h/7d quota bars and promote context when official
     # quota is unavailable (third-party relay via ANTHROPIC_BASE_URL, Bedrock,
@@ -154,6 +158,7 @@ def load_config(path: Optional[Path] = None) -> StatusbarConfig:
         bar_shimmer=_to_bool(raw.get("bar_shimmer", False)),
         show_forecast=_to_bool(raw.get("show_forecast", True)),
         show_projection=_to_bool(raw.get("show_projection", True)),
+        show_context=_to_bool(raw.get("show_context", True)),
         cache_ttl_seconds=int(raw.get("cache_ttl_seconds", DEFAULT_CACHE_TTL_SECONDS) or DEFAULT_CACHE_TTL_SECONDS),
         api_mode=str(raw.get("api_mode", DEFAULT_API_MODE)),
         warning_threshold=raw.get("warning_threshold"),
@@ -180,7 +185,7 @@ VALID_KEYS = {
     "show_todos", "show_tools", "show_tool_rollup", "show_agents",
     "show_ip_risk", "show_fp_risk",
     "show_duration", "show_lines", "show_ahead_behind", "show_version",
-    "bar_shimmer", "show_forecast", "show_projection",
+    "bar_shimmer", "show_forecast", "show_projection", "show_context",
     "show_mode", "mode_gradient",
     "cache_ttl_seconds", "api_mode",
     "warning_threshold", "critical_threshold",
@@ -195,7 +200,7 @@ _BOOL_KEYS = {"show_weekly", "show_language", "show_cost", "show_balance",
               "show_todos", "show_tools", "show_tool_rollup", "show_agents",
               "show_ip_risk", "show_fp_risk",
               "show_duration", "show_lines", "show_ahead_behind", "show_version",
-              "bar_shimmer", "show_forecast", "show_projection",
+              "bar_shimmer", "show_forecast", "show_projection", "show_context",
               "show_mode", "mode_gradient"}
 _FLOAT_KEYS = {"warning_threshold", "critical_threshold"}
 _INT_KEYS = {"auto_compact_width", "cache_ttl_seconds"}
