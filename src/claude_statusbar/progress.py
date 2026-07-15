@@ -313,6 +313,30 @@ def _build_dimension(label, pct, severity_color, use_color,
     )
 
 
+def _context_dimension(ctx_pct, theme, use_color, shimmer_phase=None):
+    """The reusable ``ctx[…NN%…]`` battery-bar segment (classic style),
+    colored on the context band (CONTEXT_WARNING_THRESHOLD /
+    CONTEXT_CRITICAL_THRESHOLD), not the 5h/7d comfort band. Single source of
+    truth shared by no-quota mode and quota-mode's show_context bar so the
+    two render byte-identically for the same ctx_pct."""
+    mute = _fg(theme.mute)
+    if ctx_pct is None:
+        ctx_fill_rgb = None
+        ctx_color = mute
+    else:
+        ctx_fill_rgb = (
+            theme.s_hot if ctx_pct >= CONTEXT_CRITICAL_THRESHOLD
+            else theme.s_warn if ctx_pct >= CONTEXT_WARNING_THRESHOLD
+            else theme.s_ok
+        )
+        ctx_color = _fg(ctx_fill_rgb)
+    return _build_dimension(
+        "ctx", ctx_pct, ctx_color, use_color,
+        CONTEXT_WARNING_THRESHOLD, CONTEXT_CRITICAL_THRESHOLD, theme,
+        shimmer_phase=shimmer_phase, fill_rgb=ctx_fill_rgb,
+    )
+
+
 # ── language-segment helpers ──
 
 _LANGUAGE_OVERRIDES = {"Chinese": "ZH", "Japanese": "JA"}
@@ -483,6 +507,7 @@ def format_status_line(
     balance_pct=None,
     balance_amount="",
     quota_stale: bool = False,
+    show_context: bool = False,
 ):
     """Build the complete classic-style status line.
 
@@ -503,21 +528,7 @@ def format_status_line(
     ink = _fg(theme.ink)
 
     if no_quota:
-        if ctx_pct is None:
-            ctx_fill_rgb = None
-            ctx_color = mute
-        else:
-            ctx_fill_rgb = (
-                theme.s_hot if ctx_pct >= CONTEXT_CRITICAL_THRESHOLD
-                else theme.s_warn if ctx_pct >= CONTEXT_WARNING_THRESHOLD
-                else theme.s_ok
-            )
-            ctx_color = _fg(ctx_fill_rgb)
-        dim_ctx = _build_dimension(
-            "ctx", ctx_pct, ctx_color, use_color,
-            CONTEXT_WARNING_THRESHOLD, CONTEXT_CRITICAL_THRESHOLD, theme,
-            shimmer_phase=shimmer_phase, fill_rgb=ctx_fill_rgb,
-        )
+        dim_ctx = _context_dimension(ctx_pct, theme, use_color, shimmer_phase)
         parts = [dim_ctx]
         # Model carries neutral ink: the ctx bar already conveys severity, and
         # the (used/size) suffix is dropped upstream since the bar IS the readout.
@@ -610,7 +621,17 @@ def format_status_line(
         dim_7d += " " + _render_forecast(forecast_7d, theme, use_color)
     parts.append(dim_7d)
 
-    if ctx_pct is None:
+    # When show_context is on and ctx data is available, the context window
+    # gets its own ctx[…] bar (LOCKED "Layout" decision, 06-CONTEXT.md) placed
+    # between 7d and the model, reusing the exact no-quota segment so quota
+    # and no-quota modes render identically for the same ctx_pct.
+    ctx_shown = show_context and ctx_pct is not None
+    if ctx_shown:
+        parts.append(_context_dimension(ctx_pct, theme, use_color, shimmer_phase))
+
+    if ctx_pct is None or ctx_shown:
+        # No context data, or the bar is already carrying the severity —
+        # either way the model name stays neutral.
         model_color = ink
     else:
         # The model name reflects context-window fill, so it must use the
