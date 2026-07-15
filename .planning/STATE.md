@@ -6,9 +6,9 @@ current_phase: 6
 current_phase_name: Context Window Bar in Quota Mode
 status: phase-complete
 stopped_at: Phase 6 complete + verified (06-VERIFICATION.md, 8/8 must-haves, 936/936 tests) — implemented, unreleased
-last_updated: "2026-07-15T13:20:00.000Z"
+last_updated: "2026-07-15T07:40:00.000Z"
 last_activity: 2026-07-15
-last_activity_desc: "Phase 6 verified PASS (CTX-01/02/03); ctx bar live in quota mode across all 3 styles, gated by show_context (default on)"
+last_activity_desc: "Quick task 260715-lm1: reset-timer countdowns now color by elapsed% on a fixed 65/85 band (5h flipped green-when-fresh, 7d normal red-when-late), decoupled from the bar; 34 new tests, full suite green (pre-existing version_sync failure deferred)"
 progress:
   total_phases: 9
   completed_phases: 8
@@ -76,12 +76,14 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - (06-02) The quota-mode ctx segment reuses the exact no-quota ctx-rendering code path via shared helpers (`_context_dimension()` in progress.py; `ctx_pill()`/`ctx_segment()` closures in styles.py) rather than parallel copies, so quota and no-quota modes are byte-identical by construction.
 - (06-03) core.py's official-quota and waiting branches gate the `(used/size)` model suffix on `cfg.show_context` (append only when off) and pass `show_context=cfg.show_context` into every `_render_style` call; `preview.py` mirrors the same gating and computes `ctx_pct` so `cs preview` matches the live status line.
 - (260715-jbf) `show_projection`/`show_forecast` now default off (config-only flip; `predict.py` and both toggles untouched). All three usage bars (5h/7d/ctx) now share one unified 65/85 color band via `progress.py`'s four band constants, reusing the existing severity helpers with no new coloring logic.
+- (260715-lm1) Reset-timer `⏰` countdowns now color by **elapsed % of the window** on a fixed 65/85 band that is the timer's OWN (`TIMER_WARNING_THRESHOLD`/`TIMER_CRITICAL_THRESHOLD` in `progress.py`, never the bar's configurable thresholds). Polarity flips per window: 5h FLIPPED (near reset → green, fresh quota imminent), 7d NORMAL (near reset → red, week running out). One shared helper `timer_severity_rgb(elapsed_pct, *, flip, theme)` drives classic/capsule/hairline + preview; bar fill/label and the ✨/⚡/🎉 emoji untouched; core computes elapsed% in the quota branch only (waiting/stale/custom-reset_hour fall back to prior color).
 
 ### Quick Tasks Completed
 
 | Task ID | Date | Summary | Commits |
 |---------|------|---------|---------|
 | 260715-jbf | 2026-07-15 | Projection/forecast chips default-off; standardized 5h/7d/ctx bars to one 65/85 color band | 3cd54f7, 2b36824, 1dacffc |
+| 260715-lm1 | 2026-07-15 | Reset-timer countdowns color by elapsed% on a fixed 65/85 band (5h flipped green-when-fresh, 7d normal red-when-late), decoupled from the bar's thresholds; 34 new tests | b28e836, c2427d5, 79bcd6d |
 
 ### Pending Todos
 
@@ -109,5 +111,5 @@ Items acknowledged and carried forward:
 ## Session Continuity
 
 Last session: 2026-07-15
-Stopped at: Completed quick task 260715-jbf (projection/forecast default-off + 65/85 threshold standardization) — 936/936 tests passing
+Stopped at: Completed quick task 260715-lm1 (reset-timer countdowns color by elapsed% on a fixed 65/85 band, 5h flipped / 7d normal, decoupled from the bar) — 34 new tests, 969/970 passing (1 pre-existing version_sync failure deferred)
 Resume file: None
