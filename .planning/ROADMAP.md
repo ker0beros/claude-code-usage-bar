@@ -96,16 +96,6 @@ is candidate future work, not yet started.
   5. The at-risk chip and the always-on projection coexist as distinct signals.
 **Plans**: Delivered (not GSD-tracked)
 
-### Phase 6: Context Window Bar in Quota Mode
-**Goal**: Developers see context-window fill as a bar segment consistent with the rest of the status line.
-**Depends on**: Phase 3
-**Requirements**: CTX-01, CTX-02, CTX-03
-**Success Criteria** (what must be TRUE):
-  1. In quota mode, context renders as a bar segment in each style's idiom (not just a suffix on the model name).
-  2. Context severity shows yellow at ≥70% and red at ≥85%.
-  3. The `show_context` toggle (default on) controls it; quota and no-quota modes render context identically.
-**Plans**: Not started — active phase (GSD-tracked). SPEC: `docs/superpowers/specs/2026-07-15-context-bar-quota-mode-design.md`
-
 ### Phase 7: Live Activity, Local Bridges & Safety Signals
 **Goal**: Developers see live session activity, cost, and optional local/account context without blocking the render.
 **Depends on**: Phase 1
@@ -129,6 +119,18 @@ is candidate future work, not yet started.
 **Plans**: Delivered (not GSD-tracked)
 
 </details>
+
+### 🔨 Active
+
+### Phase 6: Context Window Bar in Quota Mode
+**Goal**: Developers see context-window fill as a bar segment consistent with the rest of the status line.
+**Depends on**: Phase 3
+**Requirements**: CTX-01, CTX-02, CTX-03
+**Success Criteria** (what must be TRUE):
+  1. In quota mode, context renders as a bar segment in each style's idiom (not just a suffix on the model name).
+  2. Context severity shows yellow at ≥70% and red at ≥85%.
+  3. The `show_context` toggle (default on) controls it; quota and no-quota modes render context identically.
+**Plans**: Not started — active phase (GSD-tracked). SPEC: `docs/superpowers/specs/2026-07-15-context-bar-quota-mode-design.md`
 
 ### 📋 Hardening (Planned)
 
