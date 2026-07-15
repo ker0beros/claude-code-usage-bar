@@ -8,7 +8,7 @@ def test_chip_after_5h_reset_when_present():
     out = format_status_line(msgs_pct=80, tkns_pct=None, reset_time="1h28m",
                              model="Opus", weekly_pct=10, reset_time_7d="6d",
                              use_color=False, theme=TH, forecast_5h="~40m")
-    assert "⏰1h28m" in out
+    assert "⏰ 1h28m" in out
     assert "~40m" in out
     assert out.index("~40m") > out.index("1h28m")   # after the reset
 

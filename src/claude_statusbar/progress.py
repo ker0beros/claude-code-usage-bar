@@ -659,7 +659,7 @@ def format_status_line(
     dim_5h = _build_dimension("5h", msgs_pct, color_5h, use_color,
                               warning_threshold, critical_threshold, theme,
                               shimmer_phase=shimmer_phase, fill_rgb=rgb_5h)
-    dim_5h += colorize(f"⏰{reset_time}{countdown_emoji}", timer_color_5h, use_color)
+    dim_5h += colorize(f" ⏰ {reset_time}{countdown_emoji}", timer_color_5h, use_color)
     if projection_5h:
         dim_5h += " " + _render_projection(projection_5h, theme, use_color)
     # The legacy average-pace forecast (`⚠~25m`) and the projection chip are
@@ -676,7 +676,7 @@ def format_status_line(
                               warning_threshold, critical_threshold, theme,
                               shimmer_phase=shimmer_phase, fill_rgb=rgb_7d)
     if reset_time_7d:
-        dim_7d += colorize(f"⏰{reset_time_7d}", timer_color_7d, use_color)
+        dim_7d += colorize(f" ⏰ {reset_time_7d}", timer_color_7d, use_color)
     if projection_7d:
         dim_7d += " " + _render_projection(projection_7d, theme, use_color)
     if forecast_7d and projection_pct(projection_7d) is None:

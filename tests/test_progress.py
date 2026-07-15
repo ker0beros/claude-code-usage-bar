@@ -148,7 +148,7 @@ def test_format_status_line_7d_no_countdown():
     )
     assert "7d[" in line
     # 5h has ⏰, 7d does not (no reset_time_7d)
-    assert "⏰2h30m" in line
+    assert "⏰ 2h30m" in line
 
 def test_format_status_line_with_color():
     """Verify ANSI codes are present when use_color=True."""

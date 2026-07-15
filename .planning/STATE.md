@@ -111,5 +111,5 @@ Items acknowledged and carried forward:
 ## Session Continuity
 
 Last session: 2026-07-15
-Stopped at: Completed quick task 260715-lm1 (reset-timer countdowns color by elapsed% on a fixed 65/85 band, 5h flipped / 7d normal, decoupled from the bar) — 34 new tests, 969/970 passing (1 pre-existing version_sync failure deferred)
+Stopped at: Completed quick task 260715-lm1 (reset-timer countdowns color by elapsed% on a fixed 65/85 band, 5h flipped / 7d normal, decoupled from the bar) — 34 new tests, 969/970 passing (1 pre-existing version_sync failure deferred). Follow-up (fast): added a space on each side of the classic-style ⏰ clock icon (` ⏰ {time}`).
 Resume file: None

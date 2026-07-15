@@ -104,7 +104,7 @@ def test_timer_color_ignores_customized_bar_thresholds():
         warning_threshold=70, critical_threshold=90,
         timer_elapsed_5h=65, use_color=True, theme=THEME,
     )
-    expected_timer_segment = f"{_fg(THEME.s_warn)}⏰2h30m{RESET}"
+    expected_timer_segment = f"{_fg(THEME.s_warn)} ⏰ 2h30m{RESET}"
     assert expected_timer_segment in result
 
 
@@ -118,7 +118,7 @@ def test_timer_color_differs_from_bar_color_when_signals_disagree():
     )
     from claude_statusbar.progress import colorize
     assert colorize("5h", _fg(THEME.s_ok), True) in result
-    assert f"{_fg(THEME.s_hot)}⏰4h00m{RESET}" in result
+    assert f"{_fg(THEME.s_hot)} ⏰ 4h00m{RESET}" in result
 
 
 def test_timer_color_differs_from_bar_color_7d():
@@ -131,7 +131,7 @@ def test_timer_color_differs_from_bar_color_7d():
     )
     from claude_statusbar.progress import colorize
     assert colorize("7d", _fg(THEME.s_ok), True) in result
-    assert f"{_fg(THEME.s_hot)}⏰1h00m{RESET}" in result
+    assert f"{_fg(THEME.s_hot)} ⏰ 1h00m{RESET}" in result
 
 
 # ── edge cases: never crash, fall back to prior coloring ────────────────────
@@ -143,7 +143,7 @@ def test_format_status_line_none_elapsed_falls_back_to_bar_color():
     # 50% is below warn(65) → bar reads s_ok; with no elapsed% given the
     # timer text falls back to the SAME color_5h — the unchanged prior
     # behavior (timer == bar when there's nothing to band on).
-    assert f"{_fg(THEME.s_ok)}⏰1h00m{RESET}" in result
+    assert f"{_fg(THEME.s_ok)} ⏰ 1h00m{RESET}" in result
 
 
 def test_format_status_line_none_elapsed_matches_omitted_kwargs():
