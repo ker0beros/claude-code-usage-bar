@@ -11,6 +11,14 @@ For a quick overview of the latest release, see the
 
 ## Unreleased
 
+- Search-provider credit bars: opt-in `fc`/`tv` mini fuel-gauge bars show
+  remaining Firecrawl / Tavily API credits, each shown only when that
+  provider's API key (`FIRECRAWL_API_KEY` / `TAVILY_API_KEY`) is present.
+  Default **off** — `cs config set show_search_credits on` to enable. Same
+  architecture as the relay-balance gauge: a detached prober does the HTTP
+  probe and writes a TTL/negative-cached file (5min positive / 1h negative);
+  the render path only ever reads that cache and never touches the network.
+  Zero new dependencies (stdlib `urllib` only).
 - Reset-timer countdowns (`⏰`) now color by elapsed% of their own window on a
   fixed 65/85 band, independent of the bar's thresholds — 5h flipped (green
   when fresh, i.e. a short countdown), 7d normal (red when late, i.e. a short

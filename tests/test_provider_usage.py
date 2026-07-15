@@ -375,3 +375,102 @@ def test_ensure_fresh_never_raises_on_popen_oserror(tmp_path, monkeypatch):
     pu.ensure_fresh({"FIRECRAWL_API_KEY": "fc-key"})  # must not raise
     fp = pu.fingerprint("firecrawl", "fc-key")
     assert pu.is_inflight(fp) is False   # cleared after the failed spawn
+
+
+# --- render-path isolation: segments() opens no socket, reads cache only ---
+
+def test_segments_opens_no_socket(tmp_path, monkeypatch):
+    _iso(tmp_path, monkeypatch)
+    env = {"FIRECRAWL_API_KEY": "fc-key"}
+    fp = pu.fingerprint("firecrawl", "fc-key")
+    pu.write_cache_atomic(fp, {"ts": time.time(), "supported": True,
+                               "remaining": 820, "limit": 1000, "pct": 82.0})
+
+    import socket
+
+    def _boom(*a, **k):
+        raise AssertionError("segments() must never open a socket")
+    monkeypatch.setattr(socket, "socket", _boom)
+
+    segs = pu.segments(env)
+    assert len(segs) == 1
+    assert segs[0]["label"] == "fc"
+
+
+def test_segments_does_not_spawn_subprocess(tmp_path, monkeypatch):
+    """segments() is read-only — it must never invoke subprocess.Popen even
+    when the cache is missing/stale. Only ensure_fresh() spawns."""
+    _iso(tmp_path, monkeypatch)
+    env = {"FIRECRAWL_API_KEY": "fc-key", "TAVILY_API_KEY": "tv-key"}
+    spawned = []
+    import subprocess
+    monkeypatch.setattr(subprocess, "Popen",
+                        lambda *a, **k: spawned.append("popen"))
+    # No cache written at all — segments() must still return [] without spawning.
+    assert pu.segments(env) == []
+    assert not spawned
+
+
+# --- edge cases: both keys absent; fresh negative-cache omission ---
+
+def test_segments_both_keys_absent_returns_empty_even_with_cache(tmp_path, monkeypatch):
+    _iso(tmp_path, monkeypatch)
+    fp = pu.fingerprint("firecrawl", "fc-key")
+    pu.write_cache_atomic(fp, {"ts": time.time(), "supported": True,
+                               "remaining": 820, "limit": 1000, "pct": 82.0})
+    # both FIRECRAWL_API_KEY and TAVILY_API_KEY absent from env
+    assert pu.segments({}) == []
+
+
+def test_fresh_negative_cache_entry_omitted_and_not_reprobed(tmp_path, monkeypatch):
+    _iso(tmp_path, monkeypatch)
+    env = {"FIRECRAWL_API_KEY": "fc-key"}
+    fp = pu.fingerprint("firecrawl", "fc-key")
+    pu.write_cache_atomic(fp, {"ts": time.time(), "supported": False})
+    assert pu.segments(env) == []
+    # segments() itself never spawns regardless of cache polarity
+    spawned = []
+    import subprocess
+    monkeypatch.setattr(subprocess, "Popen",
+                        lambda *a, **k: spawned.append("popen"))
+    pu.segments(env)
+    assert not spawned
+
+
+def test_ensure_fresh_does_not_reprobe_fresh_negative_cache(tmp_path, monkeypatch):
+    _iso(tmp_path, monkeypatch)
+    fp = pu.fingerprint("firecrawl", "fc-key")
+    pu.write_cache_atomic(fp, {"ts": time.time(), "supported": False})
+    spawned = []
+    import subprocess
+    monkeypatch.setattr(subprocess, "Popen",
+                        lambda *a, **k: spawned.append("popen"))
+    pu.ensure_fresh({"FIRECRAWL_API_KEY": "fc-key"})
+    assert not spawned   # fresh negative cache -> not due for re-check yet
+
+
+# --- daemon gate: toggle OFF makes zero provider calls ---
+# Mirrors tests/test_daemon.py::test_ip_heartbeat_gated_on_show_ip_risk, the
+# established pattern for this repo's opt-in network-signal heartbeats.
+
+def test_search_credits_heartbeat_gated_on_show_search_credits(monkeypatch):
+    """The daemon's search-provider probe heartbeat must NOT fire when the
+    user hasn't enabled show_search_credits — default users make zero
+    Firecrawl/Tavily calls."""
+    import os
+    import claude_statusbar.config as config
+    calls = []
+    monkeypatch.setattr(pu, "ensure_fresh", lambda *a, **k: calls.append(1))
+
+    # Mirror daemon.run_forever's gate: only probe when show_search_credits is on.
+    def _tick(cfg_on):
+        monkeypatch.setattr(
+            config, "load_config",
+            lambda *a, **k: config.StatusbarConfig(show_search_credits=cfg_on))
+        if config.load_config().show_search_credits:
+            pu.ensure_fresh(os.environ)
+
+    _tick(False)
+    assert calls == []          # default off → no probe
+    _tick(True)
+    assert calls == [1]         # opt-in → probes

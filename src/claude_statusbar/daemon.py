@@ -624,6 +624,11 @@ def run_forever(render_interval: float = DEFAULT_RENDER_INTERVAL) -> int:
     # against a 60-minute TMP_GC_AFTER_S cutoff.
     last_maint = 0.0
     last_ip = 0.0
+    # Search-provider credit re-check heartbeat. Shares the IP-risk cadence:
+    # provider_usage.ensure_fresh() self-throttles via its own TTL/inflight
+    # gate, so firing this generously is cheap and just lets a freshly-set
+    # env key get picked up promptly.
+    last_search = 0.0
     try:
         while _running:
             t0 = time.time()
@@ -639,6 +644,18 @@ def run_forever(render_interval: float = DEFAULT_RENDER_INTERVAL) -> int:
                     if load_config().show_ip_risk:
                         from . import ip_risk
                         ip_risk.ensure_fresh()
+                except Exception:
+                    pass
+            if t0 - last_search > IP_HEARTBEAT_S:
+                last_search = t0
+                # Only probe when the user opted into search-provider credit
+                # bars. Default users (show_search_credits off) make ZERO
+                # Firecrawl/Tavily calls — same opt-in discipline as ip_risk.
+                try:
+                    from .config import load_config
+                    if load_config().show_search_credits:
+                        from . import provider_usage
+                        provider_usage.ensure_fresh(os.environ)
                 except Exception:
                     pass
             if t0 - last_maint > GC_INTERVAL_S:
