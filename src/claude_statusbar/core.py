@@ -1212,12 +1212,20 @@ def main(json_output: bool = False,
     # default off. ensure_fresh() spawns the detached prober when a
     # provider's cache is stale; segments() reads cache only (never blocks).
     # Wired into ALL FOUR _render_style() branches below.
+    #
+    # Source the provider keys from os.environ, NOT _effective_env: the
+    # FIRECRAWL_API_KEY / TAVILY_API_KEY secrets are intentionally absent from
+    # the per-session env (render_thin._SESSION_ENV_KEYS carries only the 4
+    # non-secret API-mode vars, because that env is persisted to disk). Reading
+    # _effective_env here left segments() blind to the keys, so the bars never
+    # rendered live. os.environ matches the daemon heartbeat (daemon.py's
+    # ensure_fresh(os.environ)) and keeps the raw keys off disk.
     search_kwargs = {}
     if cfg.show_search_credits:
         try:
             from . import provider_usage
-            provider_usage.ensure_fresh(_effective_env)
-            segs = provider_usage.segments(_effective_env)
+            provider_usage.ensure_fresh(os.environ)
+            segs = provider_usage.segments(os.environ)
             if segs:
                 search_kwargs = {"search_credits": segs}
         except Exception:

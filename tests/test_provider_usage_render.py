@@ -123,3 +123,64 @@ def test_preview_output_contains_search_credit_text(monkeypatch, capsys):
     preview_mod.run(use_color=False, theme_filter="graphite", style_filter="classic")
     out = capsys.readouterr().out
     assert "fc 82%" in out or "fc[" in out
+
+
+# --- env-sourcing regression: keys come from os.environ, not the session env ---
+
+def test_search_credits_sourced_from_os_environ_not_session_env(
+    tmp_path, monkeypatch, capsys
+):
+    """Regression: under the shared daemon, core.main() renders with the
+    per-session env (`_cs_env`) stamped by render_thin, which deliberately
+    OMITS secrets (render_thin._SESSION_ENV_KEYS carries only 4 non-secret
+    API-mode vars, since that env is persisted to disk). So the provider keys
+    live ONLY in os.environ. core.main() must source FIRECRAWL_API_KEY from
+    os.environ (like the daemon heartbeat), NOT from the session env —
+    otherwise segments() is blind to the key and the bar never renders live.
+
+    This drives the FULL core.main() render (the render-layer tests above pass
+    a stub `search_credits` list and cannot catch the env-sourcing bug).
+    """
+    import io
+    import json
+    import sys
+    import time
+
+    monkeypatch.setenv("HOME", str(tmp_path))
+    # The provider key exists ONLY in os.environ — never in the session env.
+    monkeypatch.setenv("FIRECRAWL_API_KEY", "test-key")
+
+    # Seed a FRESH cache entry so ensure_fresh() is a no-op (no network spawn).
+    from claude_statusbar import provider_usage as pu
+    fp = pu.fingerprint("firecrawl", "test-key")
+    pu.write_cache_atomic(fp, {"ts": time.time(), "supported": True,
+                               "pct": 82.0, "remaining": 820, "limit": 1000})
+
+    (tmp_path / ".claude").mkdir(parents=True)
+    cfg = tmp_path / ".claude" / "claude-statusbar.json"
+    cfg.write_text(json.dumps({
+        "show_project_branch": False, "show_cache_age": False,
+        "show_todos": False, "show_mode": False, "show_context": False,
+        "show_search_credits": True,
+    }), encoding="utf-8")
+    import claude_statusbar.config as config
+    monkeypatch.setattr(config, "CONFIG_PATH", cfg)
+
+    # Payload carries `_cs_env` (the stamped per-session env) WITHOUT the
+    # provider key — exactly what render_thin produces under the shared daemon.
+    payload = json.dumps({
+        "session_id": "s", "transcript_path": "/n.jsonl",
+        "model": {"id": "o", "display_name": "Opus 4.8"},
+        "rate_limits": {
+            "five_hour": {"used_percentage": 42, "resets_at": 9999999999},
+            "seven_day": {"used_percentage": 18, "resets_at": 9999999999},
+        },
+        "_cs_env": {"ANTHROPIC_BASE_URL": "", "CS_API_MODE": "auto"},
+    })
+    monkeypatch.setattr(sys, "stdin", io.StringIO(payload))
+
+    from claude_statusbar.core import main
+    main(use_color=False, _suppress_side_effects=True)
+    out = capsys.readouterr().out
+    # The fc battery must render even though the session env lacks the key.
+    assert "fc[" in out and "82%" in out, out
