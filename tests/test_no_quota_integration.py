@@ -3,6 +3,12 @@
 Drives core.main() with stdin + a monkeypatched environment, asserting the
 rendered classic line switches between the quota layout (5h/7d bars) and the
 no-quota layout (ctx bar) based on ANTHROPIC_BASE_URL / CS_API_MODE.
+
+show_context defaults to False here (pinned in _write_config) so these tests
+keep isolating the quota/no-quota env-switch they were written for from the
+(separately tested, plan 06-03) quota-mode ctx bar toggle — the no-quota
+branch always draws its ctx bar regardless of show_context, so this pin does
+not affect any of this file's "ctx[" assertions for the no-quota layout.
 """
 
 import io
@@ -32,6 +38,7 @@ def _write_config(tmp_path, **values):
         "show_cache_age": False,
         "show_todos": False,
         "show_mode": False,
+        "show_context": False,
     }
     base.update(values)
     path = tmp_path / ".claude" / "claude-statusbar.json"

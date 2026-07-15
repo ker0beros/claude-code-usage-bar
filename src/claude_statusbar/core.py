@@ -1311,6 +1311,7 @@ def main(json_output: bool = False,
                     ctx_pct=ctx_pct,
                     shimmer_phase=shimmer_phase,
                     no_quota=True,
+                    show_context=cfg.show_context,
                     balance_text=balance_text,
                     balance_pct=balance_pct,
                     balance_amount=balance_amount,
@@ -1384,7 +1385,8 @@ def main(json_output: bool = False,
                     # Strip redundant size suffix like "(1M context)" from display_name
                     import re as _re
                     model = _re.sub(r'\s*\([^)]*context[^)]*\)', '', model)
-                    model = f"{model}({format_number(ctx_used)}/{format_number(ctx_size)})"
+                    if not cfg.show_context:
+                        model = f"{model}({format_number(ctx_used)}/{format_number(ctx_size)})"
 
                 countdown = get_countdown_emoji(minutes_to_reset)
 
@@ -1434,6 +1436,7 @@ def main(json_output: bool = False,
                     density=cfg.density, show_weekly=cfg.show_weekly,
                     ctx_pct=ctx_pct,
                     shimmer_phase=shimmer_phase,
+                    show_context=cfg.show_context,
                     **projection_kwargs,
                     **forecast_kwargs,
                     **identity_kwargs, **cwd_kwargs, **party_kwargs, **mode_kwargs, **ip_line_kwargs, **fp_line_kwargs,
@@ -1469,7 +1472,8 @@ def main(json_output: bool = False,
                 if ctx_size > 0:
                     import re as _re
                     model = _re.sub(r'\s*\([^)]*context[^)]*\)', '', model)
-                    model = f"{model}({format_number(ctx_used)}/{format_number(ctx_size)})"
+                    if not cfg.show_context:
+                        model = f"{model}({format_number(ctx_used)}/{format_number(ctx_size)})"
 
                 if json_output:
                     print(json.dumps({
@@ -1492,6 +1496,7 @@ def main(json_output: bool = False,
                         ctx_pct=ctx_pct,
                         shimmer_phase=shimmer_phase,
                         quota_stale=quota_stale,
+                        show_context=cfg.show_context,
                         **identity_kwargs, **cwd_kwargs, **party_kwargs, **mode_kwargs, **ip_line_kwargs, **fp_line_kwargs,
                         **activity_kwargs,
                     ))
