@@ -140,7 +140,7 @@ def test_preview_classic_varies_by_theme(capsys, monkeypatch):
     from claude_statusbar import preview as preview_mod
 
     # Force demo data so the test doesn't depend on a live cache file.
-    monkeypatch.setattr(preview_mod, "_real_data", lambda: None)
+    monkeypatch.setattr(preview_mod, "_real_data", lambda show_context=False: None)
 
     preview_mod.run(use_color=True, theme_filter="graphite", style_filter="classic")
     out_g = capsys.readouterr().out

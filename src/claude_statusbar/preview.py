@@ -34,7 +34,7 @@ def _fmt_reset(ts: Optional[int]) -> str:
     return f"{m}m"
 
 
-def _real_data() -> Optional[dict]:
+def _real_data(show_context: bool = False) -> Optional[dict]:
     try:
         raw = json.loads(CACHED_STDIN.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
@@ -50,8 +50,9 @@ def _real_data() -> Optional[dict]:
     )
     used = cw.get("total_input_tokens", 0) + cw.get("total_output_tokens", 0)
     size = cw.get("context_window_size", 0)
-    if size > 0:
+    if size > 0 and not show_context:
         name = f"{name}({_fmt_num(used)}/{_fmt_num(size)})"
+    ctx_pct = (used / size * 100) if size > 0 else None
 
     # Optional segments — compute the same way core.main does so preview
     # actually shows what the live status line shows.
@@ -76,6 +77,7 @@ def _real_data() -> Optional[dict]:
         reset_5h=_fmt_reset(fh.get("resets_at")),
         reset_7d=_fmt_reset(sd.get("resets_at")),
         model=name,
+        ctx_pct=ctx_pct,
         cache_age_text=cache_age_text,
         cost_text=cost_text,
         activity=activity,
@@ -85,12 +87,17 @@ def _real_data() -> Optional[dict]:
     )
 
 
-def _demo_data() -> dict:
+def _demo_data(show_context: bool = False) -> dict:
     from .activity import ActivityInfo
+    # ~52% of a 1M window — coherent demo numbers so the bar is visible and,
+    # when the suffix is shown instead, it matches the same used/size figures.
+    demo_used, demo_size = 520_000, 1_000_000
+    model = "Opus 4.7" if show_context else f"Opus 4.7({_fmt_num(demo_used)}/{_fmt_num(demo_size)})"
     return dict(
         msgs_pct=42, weekly_pct=18,
         reset_5h="3h28m", reset_7d="5d12h",
-        model="Opus 4.7(45.0k/1.0M)",
+        model=model,
+        ctx_pct=demo_used / demo_size * 100,
         cache_age_text="3m24s",  # warm — demo what countdown looks like
         cost_text="2.18",
         activity=ActivityInfo(
@@ -109,16 +116,25 @@ def _demo_data() -> dict:
 
 
 def run(use_color: bool = True, theme_filter: Optional[str] = None,
-        style_filter: Optional[str] = None) -> int:
+        style_filter: Optional[str] = None,
+        show_context: Optional[bool] = None) -> int:
     """Render style × theme matrix.
 
     `theme_filter` / `style_filter` (optional) limit output to one row.
     Useful when the user is comparing a specific combo: `cs preview --theme nord`
     shows nord across all 3 styles; `cs preview --style hairline --theme dracula`
     shows just that one combo.
+
+    `show_context` mirrors core.main()'s toggle: when None (the default), it
+    resolves from the user's persisted config, so `cs preview` shows exactly
+    what the live status line will show.
     """
-    real = _real_data()
-    data = real or _demo_data()
+    if show_context is None:
+        from .config import load_config
+        show_context = load_config().show_context
+
+    real = _real_data(show_context)
+    data = real or _demo_data(show_context)
     src_label = "用你当前的真实数据" if real else "演示数据(找不到 last_stdin.json)"
 
     # Show the activity line (todos + active tool / completed rollup) so users
@@ -182,6 +198,7 @@ def run(use_color: bool = True, theme_filter: Optional[str] = None,
                 use_color=use_color,
                 warning_threshold=30.0, critical_threshold=70.0,
                 activity=data.get("activity"), activity_opts=act_opts,
+                ctx_pct=data.get("ctx_pct"), show_context=show_context,
             )
             print(f"  {DIM}[theme-agnostic]{R} {line}")
             continue
@@ -198,6 +215,7 @@ def run(use_color: bool = True, theme_filter: Optional[str] = None,
                 use_color=use_color,
                 warning_threshold=30.0, critical_threshold=70.0,
                 activity=data.get("activity"), activity_opts=act_opts,
+                ctx_pct=data.get("ctx_pct"), show_context=show_context,
             )
             print(f"  {DIM}[{theme.name:<9}]{R} {line}")
     print()
