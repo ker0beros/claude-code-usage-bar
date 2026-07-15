@@ -32,6 +32,17 @@ For a quick overview of the latest release, see the
   a search-credit refresh using its OWN always-live environment on every
   tick — fast (daemon-cat) and fallback paths alike — independent of the
   daemon's one-time snapshot.
+- Fixed: the `fc`/`tv` bars could still flash once on a brand-new session and
+  then vanish for good, even with the refresh above in place. The refresh
+  keeps the on-disk cache fresh, but the shared daemon's `segments()` call
+  still needed the *raw* API key (to compute which cache file to read) and
+  never had one — so the daemon's very next render tick permanently
+  overwrote the correct output with an empty one. `cs render` now stamps a
+  non-secret per-provider cache fingerprint (the same one-way hash already
+  used as the cache filename — never the raw key) into the per-session
+  payload on every tick; the daemon uses that stamped fingerprint to locate
+  the cache entry when its own environment has no key, so the bars render
+  and stay.
 
 ---
 

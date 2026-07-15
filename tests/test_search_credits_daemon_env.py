@@ -15,6 +15,29 @@ always reflects whatever process spawned it right now. These tests pin down
 that render_thin._maybe_refresh_search_credits() is called unconditionally
 (fast daemon-cat path AND inline fallback alike) and always uses render_thin's
 own live os.environ — never a stale/frozen snapshot.
+
+--- Follow-up bug: flash-then-vanish (see .planning/debug/search-bars-flash-vanish.md) ---
+
+The refresh above only fixed the CACHE. It did NOT fix the DISPLAY: a fresh
+cache is useless if provider_usage.segments() is called from inside the
+shared daemon (core.main() runs in the daemon's own process — see
+daemon.py's _render_payload), because segments() locates a provider's cache
+entry via fingerprint(name, key) and the daemon's os.environ still lacks the
+raw key. Symptom: a brand-new session's first tick has no per-session daemon
+output yet, so it renders inline (render_thin's own live env) and the bars
+flash correctly — then the long-lived, iTerm2-restart-persisting daemon
+renders that session on its next tick using its OWN keyless env, permanently
+overwriting the good render with an empty one. Fix: render_thin stamps a
+non-secret per-provider fingerprint (a one-way hash — never the raw key,
+see provider_usage.fingerprint()) into the per-session payload under
+`_cs_search_fps`; provider_usage.segments() accepts this as a fallback
+lookup key (`session_fps=`) when the raw key is absent from `env`, so the
+daemon can still locate the cache entry the render_thin process already
+refreshed. The tests below pin down: (a) the fingerprint stamp is computed
+correctly and never leaks the raw key, (b) the stamp is only added when the
+feature is enabled, and (c) segments()/core.main() actually render the bar
+when given a keyless env + the session-stamped fingerprint — the direct
+regression guard for this bug.
 """
 import json
 import os
@@ -174,3 +197,185 @@ def test_live_env_sees_key_that_a_frozen_snapshot_would_miss(monkeypatch, tmp_pa
     render_thin._maybe_refresh_search_credits()
     after = provider_usage.read_cache(fp)
     assert after == before, "already-fresh cache entry must not be touched"
+
+
+# ---------------------------------------------------------------------------
+# provider_usage.session_fingerprints() — the non-secret stamp
+# ---------------------------------------------------------------------------
+def test_session_fingerprints_matches_fingerprint_and_never_leaks_raw_key(monkeypatch):
+    monkeypatch.setenv("FIRECRAWL_API_KEY", "fc-super-secret-123")
+    monkeypatch.delenv("TAVILY_API_KEY", raising=False)
+
+    fps = provider_usage.session_fingerprints(os.environ)
+
+    assert fps == {"firecrawl": provider_usage.fingerprint(
+        "firecrawl", "fc-super-secret-123")}
+    assert "tavily" not in fps
+    assert "fc-super-secret-123" not in json.dumps(fps), (
+        "the stamped map must be the one-way hash, never the raw key"
+    )
+
+
+def test_session_fingerprints_empty_when_no_keys_present():
+    assert provider_usage.session_fingerprints({"PATH": "/usr/bin"}) == {}
+
+
+# ---------------------------------------------------------------------------
+# render_thin._inject_session_env() stamps `_cs_search_fps`
+# ---------------------------------------------------------------------------
+def test_inject_session_env_stamps_search_fingerprint_when_enabled(monkeypatch):
+    monkeypatch.setattr(config, "load_config",
+                        lambda *a, **kw: config.StatusbarConfig(show_search_credits=True))
+    monkeypatch.setenv("FIRECRAWL_API_KEY", "fc-live-key-999")
+    monkeypatch.delenv("TAVILY_API_KEY", raising=False)
+
+    payload = json.dumps({"session_id": "s"}).encode()
+    out = render_thin._inject_session_env(payload)
+    stamped = json.loads(out.decode("utf-8"))
+
+    assert stamped["_cs_search_fps"] == {
+        "firecrawl": provider_usage.fingerprint("firecrawl", "fc-live-key-999")
+    }
+    assert "fc-live-key-999" not in out.decode("utf-8"), (
+        "the raw key must never be written into the persisted stdin payload"
+    )
+
+
+def test_inject_session_env_omits_search_fps_when_toggle_off(monkeypatch):
+    monkeypatch.setattr(config, "load_config",
+                        lambda *a, **kw: config.StatusbarConfig(show_search_credits=False))
+    monkeypatch.setenv("FIRECRAWL_API_KEY", "fc-live-key-999")
+
+    payload = json.dumps({"session_id": "s"}).encode()
+    out = render_thin._inject_session_env(payload)
+    stamped = json.loads(out.decode("utf-8"))
+
+    assert "_cs_search_fps" not in stamped
+
+
+def test_inject_session_env_omits_search_fps_when_no_keys_present(monkeypatch):
+    monkeypatch.setattr(config, "load_config",
+                        lambda *a, **kw: config.StatusbarConfig(show_search_credits=True))
+    monkeypatch.delenv("FIRECRAWL_API_KEY", raising=False)
+    monkeypatch.delenv("TAVILY_API_KEY", raising=False)
+
+    payload = json.dumps({"session_id": "s"}).encode()
+    out = render_thin._inject_session_env(payload)
+    stamped = json.loads(out.decode("utf-8"))
+
+    assert "_cs_search_fps" not in stamped
+
+
+# ---------------------------------------------------------------------------
+# THE key regression: segments() must find the bar via a session-stamped
+# fingerprint even when the calling env (standing in for the daemon's frozen
+# os.environ) has no keys at all. Without this, a fresh cache is invisible to
+# the daemon-rendered output, and the bars "flash then vanish for good."
+# ---------------------------------------------------------------------------
+def test_segments_frozen_env_with_session_fps_still_shows_bar(tmp_path, monkeypatch):
+    monkeypatch.setattr(provider_usage, "_cache_root", lambda: tmp_path)
+
+    live_key = "fc-only-ever-in-render-thins-live-env"
+    fp = provider_usage.fingerprint("firecrawl", live_key)
+    provider_usage.write_cache_atomic(fp, {
+        "ts": time.time(), "supported": True,
+        "pct": 42.0, "remaining": 420, "limit": 1000,
+    })
+
+    # Simulate the daemon's frozen environment: no FIRECRAWL_API_KEY at all.
+    frozen_daemon_env = {"PATH": "/usr/bin"}
+    assert provider_usage.segments(frozen_daemon_env) == [], (
+        "sanity: without the session stamp, a keyless env still sees nothing"
+    )
+
+    # render_thin computed this fingerprint from its own live env and
+    # stamped it into the per-session payload (`_cs_search_fps`).
+    session_fps = {"firecrawl": fp}
+    segs = provider_usage.segments(frozen_daemon_env, session_fps=session_fps)
+
+    assert len(segs) == 1
+    assert segs[0]["label"] == "fc"
+    assert segs[0]["pct"] == 42.0
+
+
+def test_segments_session_fps_ignored_when_cache_stale(tmp_path, monkeypatch):
+    monkeypatch.setattr(provider_usage, "_cache_root", lambda: tmp_path)
+    fp = provider_usage.fingerprint("firecrawl", "some-key")
+    provider_usage.write_cache_atomic(fp, {
+        "ts": time.time() - provider_usage.TTL_SECONDS - 5,
+        "supported": True, "pct": 42.0,
+    })
+    segs = provider_usage.segments({}, session_fps={"firecrawl": fp})
+    assert segs == [], "a stale cache entry must not render even via the session stamp"
+
+
+def test_segments_raw_key_in_env_still_wins_over_session_fps(tmp_path, monkeypatch):
+    """If both are available, the raw key (more authoritative — this process's
+    own live env) takes precedence; the session stamp is purely a fallback."""
+    monkeypatch.setattr(provider_usage, "_cache_root", lambda: tmp_path)
+    real_key = "fc-real-current-key"
+    fp = provider_usage.fingerprint("firecrawl", real_key)
+    provider_usage.write_cache_atomic(fp, {
+        "ts": time.time(), "supported": True, "pct": 77.0,
+    })
+    env = {"FIRECRAWL_API_KEY": real_key}
+    # A bogus/stale stamp for a DIFFERENT (e.g. rotated-away) key must be ignored.
+    stale_fps = {"firecrawl": provider_usage.fingerprint("firecrawl", "old-rotated-key")}
+    segs = provider_usage.segments(env, session_fps=stale_fps)
+    assert len(segs) == 1
+    assert segs[0]["pct"] == 77.0
+
+
+# ---------------------------------------------------------------------------
+# End-to-end through core.main(): the actual daemon-render scenario. os.environ
+# lacks the key (simulating the frozen daemon); stdin carries render_thin's
+# `_cs_search_fps` stamp. The bar must still render.
+# ---------------------------------------------------------------------------
+def test_core_main_renders_bar_from_session_stamp_when_os_environ_is_keyless(
+    tmp_path, monkeypatch, capsys
+):
+    import io
+    import sys
+
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.delenv("FIRECRAWL_API_KEY", raising=False)
+    monkeypatch.delenv("TAVILY_API_KEY", raising=False)
+
+    live_key = "fc-key-only-render-thin-ever-saw"
+    fp = provider_usage.fingerprint("firecrawl", live_key)
+    provider_usage.write_cache_atomic(fp, {
+        "ts": time.time(), "supported": True,
+        "pct": 91.0, "remaining": 910, "limit": 1000,
+    })
+
+    (tmp_path / ".claude").mkdir(parents=True)
+    cfg = tmp_path / ".claude" / "claude-statusbar.json"
+    cfg.write_text(json.dumps({
+        "show_project_branch": False, "show_cache_age": False,
+        "show_todos": False, "show_mode": False, "show_context": False,
+        "show_search_credits": True,
+    }), encoding="utf-8")
+    monkeypatch.setattr(config, "CONFIG_PATH", cfg)
+
+    # Payload models exactly what render_thin persists for the daemon to
+    # consume: NO raw key anywhere, only the non-secret fingerprint stamp.
+    payload = json.dumps({
+        "session_id": "s", "transcript_path": "/n.jsonl",
+        "model": {"id": "o", "display_name": "Opus 4.8"},
+        "rate_limits": {
+            "five_hour": {"used_percentage": 42, "resets_at": 9999999999},
+            "seven_day": {"used_percentage": 18, "resets_at": 9999999999},
+        },
+        "_cs_env": {"ANTHROPIC_BASE_URL": "", "CS_API_MODE": "auto"},
+        "_cs_search_fps": {"firecrawl": fp},
+    })
+    monkeypatch.setattr(sys, "stdin", io.StringIO(payload))
+
+    from claude_statusbar.core import main
+    main(use_color=False, _suppress_side_effects=True)
+    out = capsys.readouterr().out
+    assert "fc[" in out and "91%" in out, (
+        "this is the actual daemon-render scenario: os.environ has no key, "
+        "only the session-stamped fingerprint — the bar must still render "
+        f"(got: {out!r})"
+    )

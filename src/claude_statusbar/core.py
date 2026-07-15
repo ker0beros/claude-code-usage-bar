@@ -65,6 +65,18 @@ def parse_stdin_data() -> Dict[str, Any]:
         else:
             _env = os.environ
 
+        # Non-secret per-provider search-credit fingerprints stamped by
+        # render_thin (`_cs_search_fps`): lets provider_usage.segments()
+        # locate a provider's cache entry even when this code runs inside
+        # the shared daemon, whose os.environ is frozen at spawn time and
+        # may permanently lack FIRECRAWL_API_KEY/TAVILY_API_KEY. See
+        # provider_usage.session_fingerprints() — these are one-way hashes,
+        # never the raw key.
+        search_fps = data.get('_cs_search_fps')
+        if isinstance(search_fps, dict):
+            result['_session_search_fps'] = {str(k): str(v)
+                                             for k, v in search_fps.items()}
+
         # Only cache stdin when it contains rate_limits (avoid overwriting with empty data).
         # Skip when the environment is a relay/cloud backend: a relay that happens
         # to forward a five_hour object would otherwise get cached as official-looking
@@ -1236,17 +1248,27 @@ def main(json_output: bool = False,
     # case post-warmup), os.environ here is the daemon's env frozen at its
     # own spawn time, NOT this session's — so a key exported/rotated after
     # the daemon started is invisible here too. render_thin.py's
-    # _maybe_refresh_search_credits() is the fix: it calls
-    # provider_usage.ensure_fresh() using render_thin's own always-live env
-    # on every tick (fast path and slow path alike), so the cache still gets
-    # refreshed even when THIS call site's os.environ is stale. Keep both:
-    # this call is still useful when the daemon happens to have the key.
+    # _maybe_refresh_search_credits() refreshes the CACHE using render_thin's
+    # own always-live env on every tick (fast path and slow path alike), so
+    # the cache stays fresh even when THIS call site's os.environ is stale.
+    # But a fresh cache alone doesn't help segments() below — it locates a
+    # provider's cache entry via fingerprint(name, key), and without the raw
+    # key (daemon's frozen env) it can't compute that fingerprint. That was
+    # this bug's actual root cause: the daemon renders a brand-new session
+    # (bars flash once via the pre-daemon inline-fallback tick, then vanish
+    # for good once the daemon's own keyless render takes over). Fix: pass
+    # the per-session fingerprint stamp (_session_search_fps, a one-way hash
+    # — never the raw key) as a fallback lookup key, mirroring _effective_env.
     search_kwargs = {}
     if cfg.show_search_credits:
         try:
             from . import provider_usage
             provider_usage.ensure_fresh(os.environ)
-            segs = provider_usage.segments(os.environ)
+            _search_fps = stdin_data.get('_session_search_fps')
+            segs = provider_usage.segments(
+                os.environ,
+                session_fps=_search_fps if isinstance(_search_fps, dict) else None,
+            )
             if segs:
                 search_kwargs = {"search_credits": segs}
         except Exception:

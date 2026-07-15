@@ -235,10 +235,35 @@ _SESSION_ENV_KEYS = (
 )
 
 
-def _inject_session_env(payload: bytes) -> bytes:
-    """Stamp this session's API-mode env vars into the payload under `_cs_env`.
+def _session_search_fingerprints() -> dict[str, str]:
+    """Non-secret {provider_name: fingerprint} map for this process's live
+    env, or {} if the feature is off / anything goes wrong. Lazy-imported
+    (config + provider_usage) so the happy path for users with the feature
+    disabled pays nothing beyond a cheap config load — same discipline as
+    ``_maybe_refresh_search_credits()``.
 
-    The marker is always written (possibly with a subset / empty) when the
+    See provider_usage.session_fingerprints()'s docstring for why this is
+    safe to persist to disk (one-way hash, never the raw key) and why it's
+    needed at all: it lets the shared daemon's segments() call locate a
+    provider's cache entry even though the daemon's own os.environ is
+    frozen at spawn time and may permanently lack the raw key.
+    """
+    try:
+        from .config import load_config
+        if not load_config().show_search_credits:
+            return {}
+        from . import provider_usage
+        return provider_usage.session_fingerprints(os.environ)
+    except Exception:
+        return {}
+
+
+def _inject_session_env(payload: bytes) -> bytes:
+    """Stamp this session's API-mode env vars into the payload under `_cs_env`,
+    and this session's non-secret search-credit fingerprints under
+    `_cs_search_fps`.
+
+    The markers are always written (possibly with a subset / empty) when the
     payload is a JSON object, so the daemon knows the signal came from the real
     session env rather than its own frozen os.environ. Returns the payload
     unchanged if it isn't a JSON object or re-serialisation fails."""
@@ -254,6 +279,9 @@ def _inject_session_env(payload: bytes) -> bytes:
         if v:
             env[k] = v
     d["_cs_env"] = env
+    fps = _session_search_fingerprints()
+    if fps:
+        d["_cs_search_fps"] = fps
     try:
         return json.dumps(d).encode("utf-8")
     except (TypeError, ValueError):

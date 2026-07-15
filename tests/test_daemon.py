@@ -373,10 +373,13 @@ def test_thin_client_forwards_stdin_to_per_session_cache(monkeypatch, tmp_path: 
     render_thin.render()
 
     # Both must have their own bucket; B did NOT overwrite A's stdin.
-    # render_thin stamps `_cs_env` into the payload, so compare content minus it.
+    # render_thin stamps `_cs_env` (and, when show_search_credits is on and
+    # provider keys are present in the ambient env, `_cs_search_fps`) into
+    # the payload, so compare content minus those markers.
     def _without_env(b: bytes) -> dict:
         d = json.loads(b)
         d.pop("_cs_env", None)
+        d.pop("_cs_search_fps", None)
         return d
 
     a_stdin = tmp_path / "sessions" / sid_a / "last_stdin.json"
@@ -562,9 +565,11 @@ def test_thin_client_routes_missing_session_id_to_default_bucket(
     assert out == "DEFAULT BUCKET LINE\n", out
 
     # And the stdin must have been persisted into sessions/default/.
-    # render_thin stamps `_cs_env`; compare content minus it.
+    # render_thin stamps `_cs_env` (and possibly `_cs_search_fps`); compare
+    # content minus those markers.
     persisted = json.loads((default_dir / "last_stdin.json").read_bytes())
     persisted.pop("_cs_env", None)
+    persisted.pop("_cs_search_fps", None)
     assert persisted == json.loads(payload)
 
 

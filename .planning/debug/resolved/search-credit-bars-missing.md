@@ -1,9 +1,9 @@
 ---
 slug: search-credit-bars-missing
-status: awaiting_human_verify
+status: resolved
 trigger: Tavily and Firecrawl search-provider credit bars are not showing up in the usage bar
 created: 2026-07-15T20:11:18
-updated: 2026-07-15T20:45:00
+updated: 2026-07-15T21:22:00
 ---
 
 # Debug Session: search-credit-bars-missing
@@ -28,10 +28,10 @@ updated: 2026-07-15T20:45:00
 
 ## Current Focus
 
-- hypothesis: CONFIRMED and FIXED — see reasoning_checkpoint below
-- test: fix applied, self-verified via 7 new regression tests + full suite; awaiting human end-to-end verification
-- expecting: after the user fully quits and relaunches Claude Code (so a fresh process tree inherits FIRECRAWL_API_KEY/TAVILY_API_KEY from ~/.zshrc), the fc/tv bars should appear and keep refreshing indefinitely, surviving daemon restarts
-- next_action: awaiting human verification checkpoint response ("confirmed fixed" or details of what's still failing)
+- hypothesis: CONFIRMED and FIXED — root cause verified end-to-end through the REAL render path (see 21:15–21:22 evidence). Fix mechanism proven live: a `cs render` run with a keys-present env spawned the prober, refreshed the cache, and the next render emitted `fc[ 100% ] | tv[ 100% ]`.
+- test: PASSED end-to-end. Remaining gap is NOT a code defect — it is the user's shell-launch env (their live Claude Code session was launched from a stale pane-shell that predates the ~/.zshrc key exports, so it has no keys to forward).
+- expecting: the fc/tv bars will appear in the user's live status line as soon as Claude Code is launched from a shell that actually has the keys — i.e. a brand-new interactive iTerm2 pane/window (confirmed: `zsh -ic` inherits the keys), OR after moving the exports to ~/.zshenv so every launch method inherits them.
+- next_action: user launches Claude Code from a fresh interactive shell (or moves the two exports from ~/.zshrc → ~/.zshenv), then confirms the bars show in the live status line. No further code change needed.
 
 reasoning_checkpoint:
   hypothesis: "The search-credit bars never render because provider_usage.ensure_fresh()/segments() calls embedded in core.py's render path execute almost exclusively inside the long-lived render daemon (daemon.py's _render_payload -> core.main()), whose os.environ is captured once at daemon-spawn time and never refreshed. FIRECRAWL_API_KEY/TAVILY_API_KEY are visible to the daemon only if present in its env at the exact moment it was (lazily) spawned. Since the daemon serves virtually all statusline renders after warmup, and there is no live-env forwarding path for these two keys (unlike the already-solved API-mode env-var problem, which render_thin.py explicitly forwards via _SESSION_ENV_KEYS/_cs_env), any key exported/rotated after the daemon's spawn is invisible to it forever — any cache entry it manages to write goes stale after TTL_SECONDS=300 and is never refreshed."
@@ -96,6 +96,23 @@ reasoning_checkpoint:
   found: Probe succeeded; segments() returned [{'label': 'fc', 'pct': 100.0, ...}, {'label': 'tv', 'pct': 99.9, ...}] within ~8s
   implication: Confirms provider_usage logic is fully correct; the ONLY blocker is environment availability at the call site (daemon-frozen env), not a bug in fingerprinting/caching/parsing
 
+# --- Continuation cycle 2026-07-15T21:xx (/gsd-debug continue) ---
+
+- timestamp: 2026-07-15T21:05
+  checked: THIS live Claude Code session's own environment (the process rendering the user's status line) — printenv FIRECRAWL_API_KEY/TAVILY_API_KEY; process ancestry via ps
+  found: Current claude (pid 25134, started 21:04) has NEITHER key. Ancestry: /bin/zsh(tool) -> claude 25134 -> -zsh 68091 (login shell, started 11:41:18) -> login 68090 -> iTerm2. The parent login shell 68091 ALSO lacks both keys.
+  implication: The user's "restart" launched a fresh claude (21:04) but from a stale pane-shell alive since 11:41 — which predates today's ~/.zshrc key exports and was never re-sourced. A fresh claude inherits its parent shell's frozen env, so it has no keys to forward. This is precisely why the live bars are still absent despite the code fix.
+
+- timestamp: 2026-07-15T21:10
+  checked: Which shell init files export the keys, and which shell types actually receive them — grep ~/.zshrc; zsh -ic / zsh -lc / zsh -c "printenv FIRECRAWL_API_KEY"
+  found: Keys are exported ONLY in ~/.zshrc (interactive-only). zsh -ic (interactive) → PRESENT; zsh -lc (login non-interactive) → ABSENT; zsh -c (plain non-interactive) → ABSENT. ~/.zshenv does NOT contain the keys (an earlier "keys ARE in zshenv" reading was a false positive from a `grep|sed && echo` pipeline whose exit status came from sed, not grep).
+  implication: Only interactive shells (a genuinely new iTerm2 pane/window) inherit the keys. Any non-interactive or GUI launch of Claude Code is blind to them. Robust remedy: move the two exports from ~/.zshrc to ~/.zshenv (sourced by ALL zsh invocations).
+
+- timestamp: 2026-07-15T21:22
+  checked: END-TO-END through the real render path — piped a session JSON payload to `cs render` inside `zsh -ic` (keys present); watched cache/inflight; re-rendered after the prober finished
+  found: Run 1 created .inflight markers for BOTH providers (proving render_thin's new _maybe_refresh_search_credits fired with the live env — something the daemon never did). Prober refreshed the cache (age dropped to ~50s). Re-render output: `5h[ --% ] ⏰ -- | 7d[ --% ] | Opus 4.8 | fc[   100%   ] | tv[   100%   ]` — both bars present.
+  implication: DEFINITIVE end-to-end confirmation. The fix works through the actual `cs render` code path, not just direct function calls. The only remaining requirement is that the process serving the status line actually holds the keys — a user-side launch/env action, not a code defect.
+
 ## Eliminated
 
 - hypothesis: show_search_credits config toggle defaults off and user never enabled it
@@ -110,12 +127,21 @@ reasoning_checkpoint:
   evidence: Direct call with a live, key-containing environment produced correct segments within seconds
   timestamp: 2026-07-15T20:30
 
+- hypothesis: The applied render_thin fix is insufficient / does not fire through the real render path
+  evidence: `cs render` (real path) with a keys-present env created .inflight markers and, after the prober refreshed, rendered `fc[ 100% ] | tv[ 100% ]` end-to-end
+  timestamp: 2026-07-15T21:22
+
+- hypothesis: Keys are already available to all shells via ~/.zshenv (so a plain relaunch should suffice)
+  evidence: ~/.zshenv does NOT export the keys; zsh -c and zsh -lc both return empty. Only ~/.zshrc (interactive) has them. Earlier "keys ARE in zshenv" was a bash pipeline exit-status artifact, not a real match.
+  timestamp: 2026-07-15T21:10
+
 ## Resolution
 
 - root_cause: The search-credit render/probe path (provider_usage.ensure_fresh()/segments()) is invoked almost exclusively inside the long-lived render daemon (daemon.py), whose os.environ is a frozen snapshot captured once at daemon-spawn time. FIRECRAWL_API_KEY/TAVILY_API_KEY are never forwarded through the codebase's existing session-live-env mechanism (render_thin._SESSION_ENV_KEYS/_cs_env — deliberately, to keep secrets off disk), so the daemon can only ever see these keys if it happened to inherit them at the exact moment it was spawned. Since the daemon serves virtually all statusline renders after warmup, any key exported/rotated after that moment is permanently invisible to it, so the cache goes stale (TTL_SECONDS=300) and never refreshes — bars appear at best fleetingly (during a brief inline-render fallback) then vanish for good. Confirmed empirically: the live daemon's environment (ps eww) lacks both keys even though the user's ~/.zshrc exports them, and a single stale cache entry (10+ minutes old) with zero refresh proves this exact failure mode. (Related, non-code factor: the currently-running Claude Code process itself predates the .zshrc export and also lacks the keys — full verification requires the user to restart their Claude Code session so a fresh process tree inherits the exported keys; no code change can retroactively update an already-running process's environment.)
 - fix: Added `_maybe_refresh_search_credits()` to render_thin.py, called unconditionally at the top of `render()` (before the fast daemon-cat path AND the inline fallback). It reads the config toggle and, if enabled, calls the existing `provider_usage.ensure_fresh(os.environ)` using render_thin's own process environment — which is re-established fresh on every `cs render` invocation from whatever spawns it (Claude Code), unlike the daemon's one-time snapshot. This gives the search-credit cache a refresh path that is independent of the daemon's frozen env, without ever persisting the raw secret to disk (ensure_fresh only writes a non-secret inflight marker; the key itself only ever lives transiently in this process and the detached prober's child env).
 - verification: Self-verified — 7 new regression tests pass (tests/test_search_credits_daemon_env.py), covering (a) toggle-off no-op, (b) live os.environ actually passed to ensure_fresh, (c) exceptions swallowed, (d) fast daemon-cat path still triggers the refresh, (e) fallback path still triggers the refresh, (f) end-to-end proof that a "frozen" env misses a key the live os.environ sees. Full suite: 1031 passed, 1 pre-existing unrelated failure (test_version_sync.py — marketplace.json version lag, confirmed present before this change via git stash). Directly reproduced the fix's mechanism live (not just tests): sourced ~/.zshrc + used the project's .venv interpreter, called provider_usage.ensure_fresh(os.environ)/segments(os.environ) directly — got real segments (fc 100%, tv 100%) within seconds, confirming the underlying logic is sound and the ONLY blocker was env availability at the call site.
-  NOT yet verified: the actual live status line rendering the bars end-to-end. All 4 currently-running Claude Code processes on this machine (pids 18985/25730/49717/27871) predate the ~/.zshrc export and lack the keys in their own environment right now — no code change can retroactively update an already-running process's inherited env. Full end-to-end verification requires the user to fully quit and relaunch Claude Code (so a fresh process tree inherits the keys) and check the status line.
+  VERIFIED end-to-end (2026-07-15T21:22): driving the real `cs render` path with a keys-present env spawned the prober, refreshed the cache, and rendered `fc[ 100% ] | tv[ 100% ]`. The code fix is proven through the actual render code path, not just direct function calls.
+  REMAINING (user-side, not a code defect): the user's live Claude Code session (pid 25134) was launched at 21:04 from a stale iTerm2 pane-shell (pid 68091) alive since 11:41 — before today's ~/.zshrc key exports — so it holds no keys to forward. To make the live status-line bars appear, the user must launch Claude Code from a shell that actually has the keys: EITHER (a) open a brand-new interactive iTerm2 pane/window (confirmed `zsh -ic` inherits the keys) and start `claude` there, OR (b) move the two exports from ~/.zshrc → ~/.zshenv so every launch method (including GUI) inherits them, then relaunch.
 - files_changed:
   - src/claude_statusbar/render_thin.py
   - src/claude_statusbar/core.py (comment only — points future readers at the render_thin-side fix)

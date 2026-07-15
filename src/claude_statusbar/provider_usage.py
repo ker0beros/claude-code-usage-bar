@@ -11,11 +11,13 @@ Fuses two proven in-repo patterns:
   * the opt-in network-signal spawn discipline of ``ip_risk.py``
     (``ensure_fresh`` is the ONLY spawn path; the render path never blocks).
 
-Each provider bar shows ONLY when that provider's env var is present AND its
-cache entry is fresh, supported, and carries a computable percentage. The
-render path (``segments()``) reads cache files only — it never imports
-subprocess/urllib and never opens a socket; the detached
-``_provider_usage_refresh`` prober does all HTTP.
+Each provider bar shows ONLY when its cache entry can be located (via the
+raw key in ``env``, OR a session-stamped non-secret fingerprint — see
+``session_fingerprints()``/``segments()``) AND that cache entry is fresh,
+supported, and carries a computable percentage. The render path
+(``segments()``) reads cache files only — it never imports subprocess/urllib
+and never opens a socket; the detached ``_provider_usage_refresh`` prober
+does all HTTP.
 """
 from __future__ import annotations
 
@@ -175,20 +177,55 @@ def ensure_fresh(env: Dict[str, str]) -> None:
         pass
 
 
-def segments(env: Dict[str, str]) -> List[Dict[str, Any]]:
-    """Read-only: ordered [{label,pct,text,remaining,limit}] for providers
-    whose env key is present AND whose cache entry is fresh, supported, and
-    carries a computable pct. Omits everything else — no ``--``, no crash.
-    Reads cache files only — never spawns, never imports subprocess/urllib.
+def session_fingerprints(env: Dict[str, str]) -> Dict[str, str]:
+    """Non-secret {provider_name: fingerprint} map for providers configured
+    in ``env``. Safe to persist to disk / stamp into a per-session payload:
+    ``fingerprint()`` is a one-way SHA1 hash of name+key — the SAME value
+    already used as the world-readable on-disk cache filename — never the
+    raw key itself.
+
+    This is what lets ``segments()`` locate a provider's cache entry from
+    inside the shared render daemon, whose ``os.environ`` is frozen at its
+    own spawn time and may permanently lack the raw key even though the
+    requesting session's live env (render_thin, which calls this on every
+    tick) has it. See ``segments()``'s ``session_fps`` parameter.
     """
-    out: List[Dict[str, Any]] = []
+    out: Dict[str, str] = {}
     if not env:
         return out
-    for name, env_var, label in PROVIDERS:
+    for name, env_var, _label in PROVIDERS:
         key = env.get(env_var)
-        if not key:
-            continue
-        fp = fingerprint(name, key)
+        if key:
+            out[name] = fingerprint(name, key)
+    return out
+
+
+def segments(env: Dict[str, str],
+             session_fps: Optional[Dict[str, str]] = None) -> List[Dict[str, Any]]:
+    """Read-only: ordered [{label,pct,text,remaining,limit}] for providers
+    whose cache entry is fresh, supported, and carries a computable pct.
+    Omits everything else — no ``--``, no crash. Reads cache files only —
+    never spawns, never imports subprocess/urllib.
+
+    A provider's cache entry is located by fingerprint(name, key), so the
+    raw key is normally required (``env.get(env_var)``). ``session_fps`` is
+    an optional fallback: a non-secret {name: fingerprint} map (see
+    ``session_fingerprints()``) that lets this function locate the entry
+    even when ``env`` lacks the raw key — the case when this runs inside the
+    shared render daemon (frozen os.environ) but the requesting session's
+    live env (render_thin) already stamped its fingerprint into the payload.
+    """
+    out: List[Dict[str, Any]] = []
+    if not env and not session_fps:
+        return out
+    for name, env_var, label in PROVIDERS:
+        key = env.get(env_var) if env else None
+        if key:
+            fp = fingerprint(name, key)
+        else:
+            fp = (session_fps or {}).get(name)
+            if not fp:
+                continue
         entry = read_cache(fp)
         if not is_fresh(entry) or not entry.get("supported"):
             continue
