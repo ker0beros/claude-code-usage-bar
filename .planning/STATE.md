@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-07-15)
 Phase: 6 of 9 (Context Window Bar in Quota Mode) — COMPLETE. Phases 1–5, 7, 8 delivered in v3.29.11; Phase 9 planned.
 Plan: 3 of 3 in current phase (06-01 config toggle done, 06-02 quota-mode ctx bar renderers done, 06-03 core/preview wiring done)
 Status: Phase 6 complete — ctx bar live in quota mode, gated by show_context, off reproduces prior behavior byte-for-byte
-Last activity: 2026-07-15 — Executed 06-03-PLAN.md: wired show_context into core.main()'s official-quota + waiting branches and preview.py
+Last activity: 2026-07-15 — Completed quick task 260715-ux9: moved fc/tv search-credit bars onto their own status-line row
 
 Progress: [████████░░] 89% (8 of 9 phases complete; Phase 6 implemented & verified, unreleased; Phase 9 planned)
 
@@ -87,6 +87,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 | 260715-jbf | 2026-07-15 | Projection/forecast chips default-off; standardized 5h/7d/ctx bars to one 65/85 color band | 3cd54f7, 2b36824, 1dacffc |
 | 260715-lm1 | 2026-07-15 | Reset-timer countdowns color by elapsed% on a fixed 65/85 band (5h flipped green-when-fresh, 7d normal red-when-late), decoupled from the bar's thresholds; 34 new tests | b28e836, c2427d5, 79bcd6d |
 | 260715-pic | 2026-07-15 | Opt-in search-provider credit bars (Firecrawl `fc` + Tavily `tv`), default off; detached prober + TTL/negative cache clones ip_risk + balance_cache; render path never touches the network; 52 new tests | 3640e0e, 3dee232, 9265e55 |
+| 260715-ux9 | 2026-07-15 | Moved fc/tv search-credit bars onto their own status-line row directly below the primary quota bar, each style in its own idiom (classic batteries · capsule/hairline pills); cache-age stays on the quota line; empty/None → no blank row; placement + cache-line-guard tests added | ea46202, 1605f6b |
 
 ### Pending Todos
 
