@@ -14,6 +14,16 @@ RESET = "\033[0m"
 DEFAULT_WARNING_THRESHOLD = 65.0
 DEFAULT_CRITICAL_THRESHOLD = 85.0
 
+# The ⏰ reset-timer countdowns color by ELAPSED% of their OWN window on
+# these FIXED cutoffs — never the bar's configurable warning_threshold /
+# critical_threshold above. These are deliberately fresh constants (NOT
+# aliases of DEFAULT_WARNING_THRESHOLD / DEFAULT_CRITICAL_THRESHOLD): if the
+# bar band is ever retuned (e.g. to 70/90), the timer band MUST stay 65/85.
+TIMER_WARNING_THRESHOLD = 65.0
+TIMER_CRITICAL_THRESHOLD = 85.0
+TIMER_5H_WINDOW_S = 5 * 3600
+TIMER_7D_WINDOW_S = 7 * 86400
+
 # Rate-limit windows (5h / 7d) color by where they're HEADED, not where they
 # are right now: once a `→NN%` end-of-window projection exists, the cap (100%)
 # is the red line and near-cap is the warning. These share the same 65/85
@@ -221,6 +231,47 @@ def window_severity_rgb(current_pct, projection_chip, theme=None,
     if pct >= warning:
         return theme.s_warn
     return theme.s_ok
+
+
+def timer_elapsed_pct(remaining_s, window_s):
+    """Elapsed % of a rolling reset window, clamped to [0, 100].
+
+    `remaining_s` is seconds until reset (`resets_at - now`); `window_s` is
+    the window's full length (TIMER_5H_WINDOW_S / TIMER_7D_WINDOW_S). Returns
+    None when there's nothing to compute: `remaining_s` absent, or `window_s`
+    falsy — both undefined-window cases the caller must fall back on rather
+    than banding a nonsense value. Negative/stale `remaining_s` (rollover,
+    clock skew) and overshoot both clamp rather than crash or wrap.
+    """
+    if remaining_s is None or not window_s:
+        return None
+    pct = (window_s - remaining_s) / window_s * 100.0
+    return max(0.0, min(100.0, pct))
+
+
+def timer_severity_rgb(elapsed_pct, *, flip, theme=None):
+    """Severity RGB for a ⏰ reset-timer countdown, banded on the FIXED
+    TIMER_WARNING_THRESHOLD / TIMER_CRITICAL_THRESHOLD (65/85) — deliberately
+    NOT the bar's configurable warning_threshold / critical_threshold, so the
+    timer band never moves when the bar band is retuned.
+
+    `flip` sets the band polarity per window:
+      - flip=True  (5h): a short countdown is GOOD (fresh quota imminent) —
+        elapsed <65 → s_hot, 65–<85 → s_warn, ≥85 → s_ok.
+      - flip=False (7d): a short countdown is BAD (window running out) —
+        elapsed <65 → s_ok, 65–<85 → s_warn, ≥85 → s_hot.
+
+    Returns None when `elapsed_pct` is None, so the caller can keep the
+    prior/fallback color for undefined windows.
+    """
+    if elapsed_pct is None:
+        return None
+    theme = theme or get_theme("graphite")
+    hi = elapsed_pct >= TIMER_CRITICAL_THRESHOLD
+    mid = elapsed_pct >= TIMER_WARNING_THRESHOLD
+    if flip:
+        return theme.s_ok if hi else theme.s_warn if mid else theme.s_hot
+    return theme.s_hot if hi else theme.s_warn if mid else theme.s_ok
 
 
 def colorize(text, color, use_color=True):
@@ -508,6 +559,8 @@ def format_status_line(
     balance_amount="",
     quota_stale: bool = False,
     show_context: bool = False,
+    timer_elapsed_5h=None,
+    timer_elapsed_7d=None,
 ):
     """Build the complete classic-style status line.
 
@@ -594,10 +647,19 @@ def format_status_line(
     color_5h = _fg(rgb_5h) if rgb_5h is not None else mute
     color_7d = _fg(rgb_7d) if rgb_7d is not None else mute
 
+    # The ⏰ countdown text colors by elapsed% of its OWN window (fixed
+    # 65/85, decoupled from the bar's severity above); when there's nothing
+    # to band (undefined window) it falls back to the bar's color_5h/color_7d
+    # — the prior, unchanged behavior.
+    timer_rgb_5h = timer_severity_rgb(timer_elapsed_5h, flip=True, theme=theme)
+    timer_color_5h = _fg(timer_rgb_5h) if timer_rgb_5h is not None else color_5h
+    timer_rgb_7d = timer_severity_rgb(timer_elapsed_7d, flip=False, theme=theme)
+    timer_color_7d = _fg(timer_rgb_7d) if timer_rgb_7d is not None else color_7d
+
     dim_5h = _build_dimension("5h", msgs_pct, color_5h, use_color,
                               warning_threshold, critical_threshold, theme,
                               shimmer_phase=shimmer_phase, fill_rgb=rgb_5h)
-    dim_5h += colorize(f"⏰{reset_time}{countdown_emoji}", color_5h, use_color)
+    dim_5h += colorize(f"⏰{reset_time}{countdown_emoji}", timer_color_5h, use_color)
     if projection_5h:
         dim_5h += " " + _render_projection(projection_5h, theme, use_color)
     # The legacy average-pace forecast (`⚠~25m`) and the projection chip are
@@ -614,7 +676,7 @@ def format_status_line(
                               warning_threshold, critical_threshold, theme,
                               shimmer_phase=shimmer_phase, fill_rgb=rgb_7d)
     if reset_time_7d:
-        dim_7d += colorize(f"⏰{reset_time_7d}", color_7d, use_color)
+        dim_7d += colorize(f"⏰{reset_time_7d}", timer_color_7d, use_color)
     if projection_7d:
         dim_7d += " " + _render_projection(projection_7d, theme, use_color)
     if forecast_7d and projection_pct(projection_7d) is None:
