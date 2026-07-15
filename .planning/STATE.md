@@ -1,11 +1,19 @@
 ---
-gsd_state_version: '1.0'  # placeholder; syncStateFrontmatter overwrites on first state.* call
-status: planning
+gsd_state_version: 1.0
+milestone: v3.29.11
+milestone_name: milestone
+current_phase: 6
+current_phase_name: Context Window Bar in Quota Mode
+status: executing
+stopped_at: Completed 06-02-PLAN.md (quota-mode ctx bar renderers)
+last_updated: "2026-07-15T05:05:54.832Z"
+last_activity: 2026-07-15
+last_activity_desc: "Executed 06-02-PLAN.md: show_context-gated ctx segment in classic/capsule/hairline quota-mode renderers"
 progress:
   total_phases: 9
   completed_phases: 7
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 2
+  completed_plans: 2
   percent: 78
 ---
 
@@ -21,32 +29,38 @@ See: .planning/PROJECT.md (updated 2026-07-15)
 ## Current Position
 
 Phase: 6 of 9 (Context Window Bar in Quota Mode) — ACTIVE. Phases 1–5, 7, 8 delivered in v3.29.11; Phase 9 planned.
-Plan: 0 of TBD in current phase
-Status: Ready to plan (Phase 6 SPEC at docs/superpowers/specs/2026-07-15-context-bar-quota-mode-design.md; not yet implemented)
-Last activity: 2026-07-15 — Ingest bootstrap: reverse-mapped shipped v3.29.11 into 7 delivered phases + Phase 6 (active) + 1 planned phase
+Plan: 2 of 3 in current phase (06-01 config toggle done, 06-02 quota-mode ctx bar renderers done, 06-03 core/preview wiring remains)
+Status: In progress — renderers ready (06-02); core.py/preview.py wiring (06-03) still pending
+Last activity: 2026-07-15 — Executed 06-02-PLAN.md: show_context-gated ctx segment in classic/capsule/hairline quota-mode renderers
 
 Progress: [███████░░░] 78% (7 of 9 phases delivered; Phase 6 active)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0 (delivered phases predate GSD tracking — brownfield ingest)
-- Average duration: n/a
-- Total execution time: n/a
+
+- Total plans completed: 2 (Phase 6, GSD-tracked; delivered Phases 1–5/7/8 predate GSD tracking — brownfield ingest)
+- Average duration: ~20min (single data point so far)
+- Total execution time: ~20min (GSD-tracked)
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1–5, 7, 8 (delivered) | not GSD-tracked | - | - |
-| 6 (active) | TBD | - | - |
+| 6 (active) | 2 of 3 done | 20min | 20min |
 | 9 (planned) | TBD | - | - |
 
 **Recent Trend:**
-- Last 5 plans: n/a (no GSD plans authored yet)
+
+- Last 5 plans: 06-02 (20min)
 - Trend: Stable
 
 *Updated after each plan completion*
+
+| Plan | Duration | Tasks | Files |
+|------|----------|-------|-------|
+| Phase 06 P02 | 20min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -58,6 +72,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - Zero required third-party dependencies (Python 3.9+ stdlib only) on the render path.
 - Forecast (⚠~ETA) and projection (→NN%) coexist as distinct signals on one predict module.
 - Rate/projection state keyed by account UUID; transcripts read via bounded reverse tail (≤320KB).
+- (06-02) The quota-mode ctx segment reuses the exact no-quota ctx-rendering code path via shared helpers (`_context_dimension()` in progress.py; `ctx_pill()`/`ctx_segment()` closures in styles.py) rather than parallel copies, so quota and no-quota modes are byte-identical by construction.
 
 ### Pending Todos
 
@@ -84,6 +99,6 @@ Items acknowledged and carried forward:
 
 ## Session Continuity
 
-Last session: 2026-07-15 12:21
-Stopped at: Ingest bootstrap complete — PROJECT.md, REQUIREMENTS.md, ROADMAP.md, STATE.md written
+Last session: 2026-07-15
+Stopped at: Completed 06-02-PLAN.md (quota-mode ctx bar renderers) — 06-03 (core.py/preview.py wiring) remains
 Resume file: None

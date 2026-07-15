@@ -56,8 +56,8 @@ Shipped in v3.29.11. Each maps to exactly one delivered roadmap phase.
 
 ### Context Window Bar (CTX)
 
-- [ ] **CTX-01**: Context renders as a bar segment in each style's idiom in quota mode (not just a model-name suffix)
-- [ ] **CTX-02**: Context severity bands — yellow ≥70%, red ≥85%
+- [x] **CTX-01**: Context renders as a bar segment in each style's idiom in quota mode (not just a model-name suffix)
+- [x] **CTX-02**: Context severity bands — yellow ≥70%, red ≥85%
 - [ ] **CTX-03**: `show_context` toggle (default on); quota and no-quota modes render context identically
 
 ### Live Activity & Local Bridges (LIVE)
@@ -155,6 +155,7 @@ not yet started.
 | HARD-05 | Phase 9 | Planned |
 
 **Coverage:**
+
 - v1 requirements: 37 total
 - Mapped to phases: 37
 - Unmapped: 0 ✓
