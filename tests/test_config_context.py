@@ -1,3 +1,6 @@
+import sys
+
+from claude_statusbar import cli
 from claude_statusbar.config import StatusbarConfig, load_config, set_value
 
 
@@ -10,3 +13,10 @@ def test_set_and_load(tmp_path):
     assert load_config(p).show_context is False
     set_value("show_context", "on", p)
     assert load_config(p).show_context is True
+
+def test_config_show_lists_show_context(capsys, monkeypatch):
+    monkeypatch.setattr(sys, "argv", ["cs", "config", "show"])
+    rc = cli.main()
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "show_context" in out
