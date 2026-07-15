@@ -11,6 +11,21 @@ For a quick overview of the latest release, see the
 
 ## Unreleased
 
+---
+
+## v3.30.0 — 2026-07-15
+
+### Context window bar in quota mode
+
+In quota mode (the common case, with official 5h/7d data), the context
+window now renders as its own bar segment — `ctx[███52%░░░░]` (classic),
+`⛁ CTX 52%` (capsule), `› ctx █▆▁ 52%` (hairline) — placed between the 7d
+segment and the model, exactly as no-quota mode already did. Previously it
+showed only as a `(used/size)` suffix on the model name. When the bar is
+shown the suffix is dropped and the model name goes neutral (the bar carries
+context severity). New `show_context` toggle, default **on**;
+`cs config set show_context off` restores the old suffix.
+
 ### Projection & forecast default off; usage bars standardized to a 65/85 color band
 
 `show_projection` (`→NN%`) and `show_forecast` (`⚠~ETA`) now default to
