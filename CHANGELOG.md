@@ -23,6 +23,15 @@ For a quick overview of the latest release, see the
   fixed 65/85 band, independent of the bar's thresholds — 5h flipped (green
   when fresh, i.e. a short countdown), 7d normal (red when late, i.e. a short
   countdown means the window is running out).
+- Fixed: search-provider credit bars (`fc`/`tv`) could stay blank forever even
+  with `show_search_credits` on and both API keys genuinely exported. The
+  shared render daemon's `os.environ` is frozen at its own spawn time —
+  `FIRECRAWL_API_KEY`/`TAVILY_API_KEY` exported (or rotated) afterward were
+  invisible to it, so the credit cache would refresh once at best (during a
+  lucky inline-render tick) and then go stale forever. `cs render` now kicks
+  a search-credit refresh using its OWN always-live environment on every
+  tick — fast (daemon-cat) and fallback paths alike — independent of the
+  daemon's one-time snapshot.
 
 ---
 

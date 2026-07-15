@@ -1231,6 +1231,16 @@ def main(json_output: bool = False,
     # _effective_env here left segments() blind to the keys, so the bars never
     # rendered live. os.environ matches the daemon heartbeat (daemon.py's
     # ensure_fresh(os.environ)) and keeps the raw keys off disk.
+    #
+    # NOTE: when this code path runs INSIDE the shared daemon (the common
+    # case post-warmup), os.environ here is the daemon's env frozen at its
+    # own spawn time, NOT this session's — so a key exported/rotated after
+    # the daemon started is invisible here too. render_thin.py's
+    # _maybe_refresh_search_credits() is the fix: it calls
+    # provider_usage.ensure_fresh() using render_thin's own always-live env
+    # on every tick (fast path and slow path alike), so the cache still gets
+    # refreshed even when THIS call site's os.environ is stale. Keep both:
+    # this call is still useful when the daemon happens to have the key.
     search_kwargs = {}
     if cfg.show_search_credits:
         try:

@@ -349,6 +349,37 @@ def _spawn_daemon_async() -> None:
         pass
 
 
+def _maybe_refresh_search_credits() -> None:
+    """Kick the search-provider credit prober using THIS invocation's live
+    env. render_thin runs fresh on every statusline tick, so os.environ here
+    always reflects whatever process spawned ``cs render`` (Claude Code)
+    right now — unlike the shared daemon, whose os.environ is frozen at its
+    own (possibly much earlier) spawn time and never updates when a key is
+    exported or rotated afterward (see daemon.py's search-credit heartbeat
+    and core.py's ``_effective_env`` comment for the parallel, already-known
+    API-mode case). Without this call, a daemon spawned before the user set
+    FIRECRAWL_API_KEY / TAVILY_API_KEY can never discover them on its own —
+    its ensure_fresh(os.environ) always sees the keys as absent — so the
+    search-credit bars stay permanently blank even though the keys are
+    genuinely set in the user's shell.
+
+    Cheap when there's nothing to do: ``show_search_credits`` defaults off
+    (early return before even importing provider_usage), and
+    ``ensure_fresh()`` itself no-ops via cache TTL + inflight guard the rest
+    of the time — no network call happens in THIS process either way, only
+    in a detached child it may spawn. Never persists the raw key: the key
+    only ever lives transiently in this process and that child's env.
+    """
+    try:
+        from .config import load_config
+        if not load_config().show_search_credits:
+            return
+        from . import provider_usage
+        provider_usage.ensure_fresh(os.environ)
+    except Exception:
+        pass
+
+
 def _fallback_inline() -> int:
     """Run the legacy inline render path. Costs ~45ms (Phase A baseline).
 
@@ -384,6 +415,13 @@ def render() -> int:
         # Stamp the session env BEFORE persisting so the daemon (frozen env)
         # detects no-quota mode per session, not from its own start-time env.
         _persist_stdin_bytes(_inject_session_env(payload), session_id)
+
+    # Independent of which path below runs: give the search-credit cache a
+    # chance to refresh using THIS tick's live env (see docstring). Must run
+    # on every tick, not just the inline fallback — the fast daemon-cat path
+    # below never touches core.py, so it's the ONLY place a daemon's stale
+    # env can be worked around.
+    _maybe_refresh_search_credits()
 
     # Fast path: if THIS session's daemon-rendered output is fresh, cat
     # the file and return. No core/styles/themes import.
