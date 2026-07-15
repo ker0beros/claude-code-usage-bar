@@ -4,16 +4,16 @@
 
 Claude Status Bar is an existing, shipped product (**v3.29.11**). This roadmap reverse-maps the
 delivered feature areas — from the ingested SPECs and the mapped codebase — into seven completed
-phases (the delivered milestone), plus **one active phase (Phase 6)** whose SPEC is written but
-not yet implemented, then leaves the roadmap open with one planned hardening phase drawn from the
-repo's own documented backlog (`.planning/codebase/CONCERNS.md`). Phases 1–5, 7, 8 are already TRUE
-in the product; Phase 6 (context-window bar in quota mode) is the current in-progress work; Phase 9
-is candidate future work, not yet started.
+phases (the delivered milestone), plus **Phase 6 (Context Window Bar)**, which was implemented via
+GSD (complete, unreleased — pending the next version bump), then leaves the roadmap open with one
+planned hardening phase drawn from the repo's own documented backlog
+(`.planning/codebase/CONCERNS.md`). Phases 1–8 are TRUE in the codebase; Phase 9 is candidate
+future work, not yet started.
 
 ## Milestones
 
 - ✅ **v3.29.11 Delivered** — Phases 1–5, 7, 8 (shipped, current)
-- 🔨 **Active** — Phase 6 (Context Window Bar in Quota Mode) — SPEC written, implementation in progress
+- ✅ **Phase 6 Implemented (unreleased)** — Context Window Bar in Quota Mode — verified, awaiting release
 - 📋 **Hardening (Planned)** — Phase 9 (candidate, from documented concerns)
 
 ## Phases
@@ -28,7 +28,7 @@ is candidate future work, not yet started.
 - [x] **Phase 3: Multi-Style Rendering & Theming** - Classic/capsule/hairline styles, nine themes, per-segment color
 - [x] **Phase 4: Project & Branch Identity Segment** - Opt-in second line with cached git branch + dirty marker
 - [x] **Phase 5: Rate-Limit Prediction & Learning** - ⚠~ETA chip, always-on →NN% projection, burn-regime detection
-- [ ] **Phase 6: Context Window Bar in Quota Mode** - Context as a bar segment per style with severity bands (ACTIVE — in progress)
+- [x] **Phase 6: Context Window Bar in Quota Mode** - Context as a bar segment per style with severity bands (implemented, unreleased)
 - [x] **Phase 7: Live Activity, Local Bridges & Safety Signals** - Activity, cost, AgentParty, relay balance, IP risk
 - [x] **Phase 8: Distribution, Packaging & Auto-Update** - PyPI packaging, upgrade, launchd/systemd, plugin submission
 - [ ] **Phase 9: Reliability & Maintainability Hardening (Planned)** - Health-check/repair commands, error visibility, module splits
@@ -142,7 +142,7 @@ is candidate future work, not yet started.
 
 </details>
 
-### 🔨 Active
+### ✅ Implemented (unreleased)
 
 ### Phase 6: Context Window Bar in Quota Mode
 
@@ -192,7 +192,7 @@ Phases 1–8 are delivered (shipped in v3.29.11). Phase 9 is planned and not sta
 | 3. Multi-Style Rendering & Theming | v3.29.11 | Delivered | Complete | 2026-05-07 |
 | 4. Project & Branch Identity Segment | v3.29.11 | Delivered | Complete | 2026-05-21 |
 | 5. Rate-Limit Prediction & Learning | v3.29.11 | Delivered | Complete | 2026-07-02 |
-| 6. Context Window Bar in Quota Mode | Active | 2/3 | In Progress | - |
+| 6. Context Window Bar in Quota Mode | unreleased | 3/3 | Complete | 2026-07-15 |
 | 7. Live Activity, Local Bridges & Safety Signals | v3.29.11 | Delivered | Complete | 2026-07-15 |
 | 8. Distribution, Packaging & Auto-Update | v3.29.11 | Delivered | Complete | 2026-07-15 |
 | 9. Reliability & Maintainability Hardening | Hardening | 0/TBD | Not started | - |

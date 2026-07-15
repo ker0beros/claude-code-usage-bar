@@ -4,17 +4,17 @@ milestone: v3.29.11
 milestone_name: milestone
 current_phase: 6
 current_phase_name: Context Window Bar in Quota Mode
-status: executing
-stopped_at: Completed 06-03-PLAN.md (core.py/preview.py show_context wiring) — Phase 6 complete
-last_updated: "2026-07-15T13:15:39.000Z"
+status: phase-complete
+stopped_at: Phase 6 complete + verified (06-VERIFICATION.md, 8/8 must-haves, 936/936 tests) — implemented, unreleased
+last_updated: "2026-07-15T13:20:00.000Z"
 last_activity: 2026-07-15
-last_activity_desc: "Executed 06-03-PLAN.md: wired show_context into core.main()'s official-quota + waiting branches and preview.py, closing CTX-01/CTX-03"
+last_activity_desc: "Phase 6 verified PASS (CTX-01/02/03); ctx bar live in quota mode across all 3 styles, gated by show_context (default on)"
 progress:
   total_phases: 9
-  completed_phases: 7
+  completed_phases: 8
   total_plans: 3
   completed_plans: 3
-  percent: 78
+  percent: 89
 ---
 
 # Project State
@@ -24,7 +24,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-15)
 
 **Core value:** At-a-glance rate-limit / context / model / cost visibility in the Claude Code status line — fast, within budget, zero required deps.
-**Current focus:** Phase 6 — Context Window Bar in Quota Mode (all 3 plans complete; CTX-01/CTX-02/CTX-03 closed)
+**Current focus:** Phase 6 complete + verified (implemented, unreleased). Next candidate: Phase 9 — Reliability & Maintainability Hardening (planned).
 
 ## Current Position
 
@@ -33,7 +33,7 @@ Plan: 3 of 3 in current phase (06-01 config toggle done, 06-02 quota-mode ctx ba
 Status: Phase 6 complete — ctx bar live in quota mode, gated by show_context, off reproduces prior behavior byte-for-byte
 Last activity: 2026-07-15 — Executed 06-03-PLAN.md: wired show_context into core.main()'s official-quota + waiting branches and preview.py
 
-Progress: [███████░░░] 78% (7 of 9 phases delivered; Phase 6 now complete pending phase close-out)
+Progress: [████████░░] 89% (8 of 9 phases complete; Phase 6 implemented & verified, unreleased; Phase 9 planned)
 
 ## Performance Metrics
 
