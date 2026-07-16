@@ -1063,6 +1063,16 @@ def main(json_output: bool = False,
     # this session's, so reading it would mis-detect no-quota mode per session.
     _session_env = stdin_data.get('_session_env')
     _effective_env = _session_env if isinstance(_session_env, dict) else os.environ
+    # Per-session account uuid, resolved once per render (never raises into the
+    # render path). Threaded into every predict.py store consumer below so
+    # concurrent accounts never collide on a shared rate_latest/rate_projection
+    # store keyed off whichever account happens to sit in $HOME/.claude.json.
+    # Mirrors the show_email chip's never-raise resolution convention (~1171-1180).
+    try:
+        from .predict import account_id as _predict_account_id
+        _resolved_account_uuid = _predict_account_id(stdin_data, env=_effective_env)
+    except Exception:
+        _resolved_account_uuid = None
     _api_mode = _cfg.resolve_api_mode(cfg, env=_effective_env)
     no_quota = is_no_quota_mode(_effective_env, override=_api_mode)
     # Heuristic fallback only when the env signal missed (and not force-disabled):
@@ -1426,6 +1436,7 @@ def main(json_output: bool = False,
                     session_id=stdin_data.get('session_id') or None,
                     # parse_stdin_data flattens stdin's model.id to 'model_id'
                     model=stdin_data.get('model_id') or None,
+                    account_uuid=_resolved_account_uuid,
                 )
             except Exception:
                 pass
@@ -1504,6 +1515,7 @@ def main(json_output: bool = False,
                             resets_7d=resets_at_7d,
                             now=_t.time(),
                             session_id=stdin_data.get("session_id", ""),
+                            account_uuid=_resolved_account_uuid,
                         )
                         projection_kwargs = {"projection_5h": p5 or "", "projection_7d": p7 or ""}
                     except Exception:
@@ -1520,6 +1532,7 @@ def main(json_output: bool = False,
                             used_7d=weekly_pct,
                             resets_7d=resets_at_7d,
                             now=_t.time(),
+                            account_uuid=_resolved_account_uuid,
                         )
                         forecast_kwargs = {"forecast_5h": f5 or "", "forecast_7d": f7 or ""}
                     except Exception:
@@ -1569,7 +1582,7 @@ def main(json_output: bool = False,
                             stdin_data.get('transcript_path', ''))):
                     try:
                         from .predict import quota_cache_status
-                        _st, _ = quota_cache_status()
+                        _st, _ = quota_cache_status(account_uuid=_resolved_account_uuid)
                         quota_stale = (_st == "stale")
                     except Exception:
                         quota_stale = False
