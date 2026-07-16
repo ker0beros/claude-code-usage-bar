@@ -1190,6 +1190,20 @@ def main(json_output: bool = False,
                     party_kwargs = {"party": _party}
         except Exception:
             party_kwargs = {}
+    # GSD phase/wave indicator: auto-shown whenever the cwd is a GSD project
+    # (.planning/STATE.md present). Pure local filesystem read — never invokes
+    # GSD or hits the network. The reader returns None when there is no
+    # .planning/, which is the only gate (no config toggle). Guarded so a
+    # malformed .planning/ can never break the status line.
+    planning_kwargs = {}
+    try:
+        from .planning import read_planning_status
+        _planning_cwd = str(stdin_data.get('workspace_current_dir') or os.getcwd())
+        _planning = read_planning_status(_planning_cwd)
+        if _planning is not None:
+            planning_kwargs = {"planning": _planning}
+    except Exception:
+        planning_kwargs = {}
     # Optional working-directory segment (#30): workspace.current_dir (falling
     # back to cwd — parse_stdin_data flattens both into workspace_current_dir).
     # Zero extra I/O: the data is already in the statusLine stdin. Rides the
@@ -1381,7 +1395,7 @@ def main(json_output: bool = False,
                     balance_text=balance_text,
                     balance_pct=balance_pct,
                     balance_amount=balance_amount,
-                    **identity_kwargs, **cwd_kwargs, **party_kwargs, **mode_kwargs, **ip_line_kwargs, **fp_line_kwargs,
+                    **identity_kwargs, **cwd_kwargs, **party_kwargs, **planning_kwargs, **mode_kwargs, **ip_line_kwargs, **fp_line_kwargs,
                     **activity_kwargs, **search_kwargs,
                 ))
         elif has_official:
@@ -1515,7 +1529,7 @@ def main(json_output: bool = False,
                     timer_elapsed_7d=timer_elapsed_7d,
                     **projection_kwargs,
                     **forecast_kwargs,
-                    **identity_kwargs, **cwd_kwargs, **party_kwargs, **mode_kwargs, **ip_line_kwargs, **fp_line_kwargs,
+                    **identity_kwargs, **cwd_kwargs, **party_kwargs, **planning_kwargs, **mode_kwargs, **ip_line_kwargs, **fp_line_kwargs,
                     **activity_kwargs, **search_kwargs,
                 ))
         else:
@@ -1573,7 +1587,7 @@ def main(json_output: bool = False,
                         shimmer_phase=shimmer_phase,
                         quota_stale=quota_stale,
                         show_context=cfg.show_context,
-                        **identity_kwargs, **cwd_kwargs, **party_kwargs, **mode_kwargs, **ip_line_kwargs, **fp_line_kwargs,
+                        **identity_kwargs, **cwd_kwargs, **party_kwargs, **planning_kwargs, **mode_kwargs, **ip_line_kwargs, **fp_line_kwargs,
                         **activity_kwargs, **search_kwargs,
                     ))
             else:
@@ -1605,7 +1619,7 @@ def main(json_output: bool = False,
                 warning_threshold=warning_threshold,
                 critical_threshold=critical_threshold,
                 density=cfg.density, show_weekly=cfg.show_weekly,
-                **identity_kwargs, **cwd_kwargs, **party_kwargs, **mode_kwargs, **ip_line_kwargs, **fp_line_kwargs,
+                **identity_kwargs, **cwd_kwargs, **party_kwargs, **planning_kwargs, **mode_kwargs, **ip_line_kwargs, **fp_line_kwargs,
                 **search_kwargs,
             ))
 

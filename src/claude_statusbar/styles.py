@@ -761,6 +761,69 @@ def render_party_line(party, *, theme: Theme, use_color: bool = True) -> str:
     return out if use_color else _strip(out)
 
 
+# Normalized GSD state token → the word shown when a phase isn't executing.
+# "executing" maps to "" so an executing-but-unplanned phase shows just `gsd N/T`.
+_GSD_STATE_WORD = {
+    "done": "done",
+    "planning": "planning",
+    "discussing": "discussing",
+    "verifying": "verifying",
+    "paused": "paused",
+    "executing": "",
+    "idle": "idle",
+}
+
+
+def render_planning_line(planning, *, theme: Theme = None,
+                         use_color: bool = True, density: str = "regular") -> str:
+    """Render the GSD phase/wave indicator: ``gsd 6/9 ●● ○``.
+
+    Phase is text ``current/total`` (Option A). While executing, one circle per
+    plan in the current phase (``●`` done / ``○`` pending), grouped by wave with
+    a space between groups, each group colored by its wave state — green
+    (complete) / yellow (active) / grey (future) from the active theme palette
+    (Option B). When not executing, a status word replaces the circles
+    (``gsd 6/9 done``). Returns ``""`` when there is no planning state.
+    """
+    if planning is None:
+        return ""
+    theme = theme or get_theme("graphite")
+    current = _attr(planning, "current_phase", None)
+    if current is None:
+        return ""
+    total = _attr(planning, "total_phases", 0) or 0
+    state = str(_attr(planning, "state", "") or "")
+    waves = _attr(planning, "waves", ()) or ()
+
+    MUTE = _fg(theme.mute)
+    INK = _fg(theme.ink)
+    _WAVE_COLOR = {
+        "complete": _fg(theme.s_ok),
+        "active": _fg(theme.s_warn),
+        "future": MUTE,
+    }
+
+    parts = [f"{MUTE}gsd{RESET}",
+             f"{INK}{current}/{total}{RESET}" if total else f"{INK}{current}{RESET}"]
+
+    if state == "executing" and waves:
+        groups = []
+        for wg in waves:
+            col = _WAVE_COLOR.get(_attr(wg, "state", "future"), MUTE)
+            circles = "".join("●" if d else "○" for d in _attr(wg, "done", ()))
+            if circles:
+                groups.append(f"{col}{circles}{RESET}")
+        if groups:
+            parts.append(" ".join(groups))
+    else:
+        word = _GSD_STATE_WORD.get(state, "idle")
+        if word:
+            parts.append(f"{MUTE}{word}{RESET}")
+
+    out = " ".join(parts)
+    return out if use_color else _strip(out)
+
+
 def render_agent_lines(agents, *, theme: Theme, use_color: bool = True) -> list:
     """One line per running subagent: `◐ <name>[<model>] <description> <elapsed>`.
 
@@ -947,6 +1010,7 @@ def render(style: str, **kwargs) -> str:
     activity = kwargs.pop("activity", None)
     activity_opts = kwargs.pop("activity_opts", None)
     party = kwargs.pop("party", None)
+    planning = kwargs.pop("planning", None)
     theme = kwargs.get("theme") or get_theme("graphite")
     use_color = kwargs.get("use_color", True)
 
@@ -971,6 +1035,14 @@ def render(style: str, **kwargs) -> str:
                    f"{_fg(theme.pill_ink)}{cwd_text}{RESET}")
         else:
             out = out + "\n" + f"⤷ {cwd_text}"
+
+    # GSD phase/wave indicator (#gsd) — its own dedicated line, right after the
+    # identity/cwd block so it reads as line 3 when the branch line is on (line 2
+    # without). Auto-shown; None (no .planning/) yields "" and appends nothing.
+    planning_line = render_planning_line(
+        planning, theme=theme, use_color=use_color)
+    if planning_line:
+        out = out + "\n" + planning_line
 
     party_line = render_party_line(party, theme=theme, use_color=use_color)
     if party_line:
