@@ -384,7 +384,7 @@ def _load_buckets(win_entry: Any) -> Dict[str, Dict[str, Any]]:
             if isinstance(v, dict) and _coerce(v.get("used")) is not None}
 
 
-def quota_cache_status(now=None, path=None):
+def quota_cache_status(now=None, path=None, account_uuid=_UNSET):
     """Classify the persisted rate-limit cache: ("fresh"|"stale"|"empty", age_s).
 
     * empty — no store, or no usable window buckets (a genuinely new account).
@@ -400,7 +400,7 @@ def quota_cache_status(now=None, path=None):
     if now is None:
         import time as _t
         now = _t.time()
-    p = Path(path) if path is not None else _latest_path()
+    p = Path(path) if path is not None else _latest_path(account_uuid)
     try:
         store = json.loads(p.read_text(encoding="utf-8"))
         if not isinstance(store, dict):
@@ -437,7 +437,7 @@ def regime_changed_at(path=None):
 
 
 def reconcile_account(used_5h, resets_5h, used_7d, resets_7d, path=None, now=None,
-                      session_id=None, record=True, model=None):
+                      session_id=None, record=True, model=None, account_uuid=_UNSET):
     """Merge this session's reading into the shared store and return the
     freshest (u5, r5, u7, r7) FOR THIS SESSION'S WINDOWS.
 
@@ -462,7 +462,7 @@ def reconcile_account(used_5h, resets_5h, used_7d, resets_7d, path=None, now=Non
     unchanged: monotonic up, equal readings refresh the grace clock, lower
     readings accepted as an official re-baseline once unconfirmed for
     DOWNGRADE_GRACE_S. Never raises — on any error returns the inputs."""
-    p = Path(path) if path is not None else _latest_path()
+    p = Path(path) if path is not None else _latest_path(account_uuid)
     try:
         if now is None:
             import time as _t
@@ -628,7 +628,7 @@ def reconcile_account(used_5h, resets_5h, used_7d, resets_7d, path=None, now=Non
         return used_5h, resets_5h, used_7d, resets_7d
 
 
-def forecast(used_5h, resets_5h, used_7d, resets_7d, now: float):
+def forecast(used_5h, resets_5h, used_7d, resets_7d, now: float, account_uuid=_UNSET):
     """Compute (chip_5h, chip_7d). Reconciles against the shared account-global
     latest reading first (so all windows agree), then projects. Never raises."""
     try:
@@ -636,7 +636,8 @@ def forecast(used_5h, resets_5h, used_7d, resets_7d, now: float):
         # recording reconcile — persisting this echo would re-confirm the
         # stored reading every render and freeze the downgrade grace clock.
         u5, r5, u7, r7 = reconcile_account(used_5h, resets_5h, used_7d, resets_7d,
-                                           now=now, record=False)
+                                           now=now, record=False,
+                                           account_uuid=account_uuid)
         c5 = forecast_chip("five_hour", u5, r5, now)
         c7 = forecast_chip("seven_day", u7, r7, now)
         return c5, c7
@@ -1168,13 +1169,14 @@ def _depletion_eta_seconds(used: float, ttr: float, raw_unclamped: float):
     return eta if eta < ttr else None
 
 
-def _projection_result_key(u5, r5, u7, r7) -> Optional[Tuple[str, str, float, float, float, float]]:
+def _projection_result_key(u5, r5, u7, r7,
+                           account_uuid=_UNSET) -> Optional[Tuple[str, str, float, float, float, float]]:
     try:
         return (
             # account-suffixed paths, so an account switch (or a monkeypatched
             # path in tests) invalidates the 1s result cache by key mismatch
-            str(_projection_path()),
-            str(_latest_path()),
+            str(_projection_path(account_uuid)),
+            str(_latest_path(account_uuid)),
             float(u5),
             float(r5),
             float(u7),
@@ -1253,13 +1255,15 @@ def _projection_for_window(store: Dict[str, Any], window: str, used_pct, resets_
     return chip
 
 
-def projection(used_5h, resets_5h, used_7d, resets_7d, now: float, session_id: str = ""):
+def projection(used_5h, resets_5h, used_7d, resets_7d, now: float, session_id: str = "",
+               account_uuid=_UNSET):
     try:
         # record=False — same echo hazard as forecast(); see reconcile_account.
         u5, r5, u7, r7 = reconcile_account(used_5h, resets_5h, used_7d, resets_7d,
-                                           now=now, record=False)
+                                           now=now, record=False,
+                                           account_uuid=account_uuid)
         ts = float(now)
-        key = _projection_result_key(u5, r5, u7, r7)
+        key = _projection_result_key(u5, r5, u7, r7, account_uuid)
         global _PROJECTION_RESULT_CACHE
         if key is not None and isinstance(_PROJECTION_RESULT_CACHE, dict):
             cached_at = _coerce(_PROJECTION_RESULT_CACHE.get("observed_at"))
@@ -1271,13 +1275,17 @@ def projection(used_5h, resets_5h, used_7d, resets_7d, now: float, session_id: s
                 result = _PROJECTION_RESULT_CACHE.get("result")
                 if isinstance(result, tuple) and len(result) == 2:
                     return result
-        store = load_projection_store()
-        since = regime_changed_at()
+        store = load_projection_store(path=_projection_path(account_uuid))
+        # Pitfall 2 fix: the regime marker lives in the per-account RECONCILE
+        # store (written by reconcile_account), not the projection store — a
+        # bare regime_changed_at() would silently read the wrong account's
+        # regime boundary once stores are keyed per-account.
+        since = regime_changed_at(path=_latest_path(account_uuid))
         p5 = _projection_for_window(store, "five_hour", u5, r5, now, session_id,
                                     since=since)
         p7 = _projection_for_window(store, "seven_day", u7, r7, now, session_id,
                                     since=since)
-        save_projection_store(store)
+        save_projection_store(store, path=_projection_path(account_uuid))
         result = (p5, p7)
         if key is not None:
             _PROJECTION_RESULT_CACHE = {
