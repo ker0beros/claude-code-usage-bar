@@ -198,3 +198,157 @@ def test_keying_reader_reads_only_account_uuid(tmp_path):
     assert result == "abc-123"
     assert "SECRET-SHOULD-NEVER-BE-TOUCHED" not in str(result)
 
+
+# --- Task 2: threading/landmine + prohibition-import + e2e regression ------
+
+def test_projection_threads_account_into_regime_check(tmp_path, monkeypatch):
+    """Landmine: projection() calls regime_changed_at() internally (predict.py
+    ~1185) with NO path arg today, defaulting to the (wrong, non-per-account)
+    legacy _latest_path(). It must receive the per-account reconcile path."""
+    monkeypatch.setattr(predict, "_LATEST_PATH", tmp_path / "rate_latest.json")
+    monkeypatch.setattr(predict, "_PROJECTION_PATH", tmp_path / "rate_projection.json")
+    aid = "e1605250-1111-2222-3333-444455556666"
+    captured: dict = {}
+
+    def _fake_regime_changed_at(path=None):
+        captured["path"] = path
+        return None
+
+    monkeypatch.setattr(predict, "regime_changed_at", _fake_regime_changed_at)
+
+    predict.projection(10.0, 5000.0, 8.0, 9000.0, now=0.0, session_id="s",
+                       account_uuid=aid)
+
+    assert captured.get("path") == predict._latest_path(aid)
+    assert captured.get("path") != predict._latest_path(None)
+
+
+def test_projection_result_cache_keys_by_account(monkeypatch):
+    """Landmine: the 1s result cache key must differ per account, or account
+    B's render within 1s of account A's could receive A's cached (p5, p7)."""
+    monkeypatch.setattr(predict, "_PROJECTION_RESULT_CACHE", None)
+
+    key_a = predict._projection_result_key(10.0, 5000.0, 8.0, 9000.0,
+                                           account_uuid="acct-a")
+    key_b = predict._projection_result_key(10.0, 5000.0, 8.0, 9000.0,
+                                           account_uuid="acct-b")
+
+    assert key_a is not None
+    assert key_b is not None
+    assert key_a != key_b
+
+
+def test_predict_module_imports_no_network_or_subprocess():
+    """Prohibition: predict.py must stay stdlib-only, no network/subprocess —
+    reuses the existing tests/test_import_perf.py harness verbatim.
+
+    Note: bare "urllib" is deliberately excluded from the banned set. `pathlib`
+    itself transitively imports `urllib.parse` (a pure string-parsing module,
+    no network capability, no `socket`/`subprocess` underneath) on this
+    Python version — confirmed by direct measurement: a bare `import json,
+    math, os; from datetime import datetime; from pathlib import Path`
+    already pulls in `urllib`/`urllib.parse` with zero predict.py code
+    involved. Banning the parent package name would false-positive on that
+    pre-existing, unrelated stdlib artifact. The actual network-capable
+    submodule (`urllib.request`) is what's banned, alongside `socket` and
+    `subprocess`.
+    """
+    from tests.test_import_perf import _list_imports_for
+
+    loaded = _list_imports_for("claude_statusbar.predict")
+    banned = {"subprocess", "socket", "urllib.request"}
+    leaked = sorted(banned & loaded)
+    assert not leaked, f"predict.py must stay network/subprocess-free: {leaked}"
+
+
+def test_no_destructive_fs_ops_on_existing_stores(tmp_path, monkeypatch):
+    """Prohibition (fix-forward only): the new keying path must never delete,
+    move, or rename a pre-existing rate_latest*/rate_projection* file. The
+    store's OWN atomic-write os.replace on ITS OWN target is fine — only
+    scope the assertion to the pre-existing `stale` file specifically."""
+    stale = tmp_path / "rate_latest.stale-uuid.json"
+    stale.write_text("{}", encoding="utf-8")
+    calls = []
+
+    monkeypatch.setattr(os, "unlink", lambda *a, **k: calls.append(("unlink", a)))
+    monkeypatch.setattr(os, "replace", lambda *a, **k: calls.append(("replace", a)))
+    monkeypatch.setattr(Path, "rename", lambda *a, **k: calls.append(("rename", a)))
+    monkeypatch.setattr(predict, "_LATEST_PATH", tmp_path / "rate_latest.json")
+
+    predict.reconcile_account(10.0, 5000.0, 8.0, 9000.0, now=0.0,
+                              account_uuid="new-account")
+
+    assert not any(
+        stale.name in str(c[1]) for c in calls
+    ), f"destructive fs op touched the pre-existing stale store: {calls}"
+
+
+def test_two_accounts_share_5h_reset_render_own_values(tmp_path, monkeypatch, capsys):
+    """THE regression test (R3): a true core.main() end-to-end reproduction of
+    the live 2026-07-16 cross-account collision. Two accounts share an
+    IDENTICAL clock-aligned 5h resets_at with different real used_percentage
+    (100 vs 50); each render must show its OWN value.
+
+    Deviation from the literal historical epoch in 12-RESEARCH.md/12-SPEC.md
+    (1784191800): resets_5h is computed as `time.time() + 3600` instead of a
+    hardcoded epoch. reconcile_account()'s `_reset_plausible` guard rejects any
+    resets_at more than 60s in the past relative to wall-clock `now` (used to
+    reject a poisoned far-future value from permanently winning the monotonic
+    merge) — a hardcoded historical literal recedes further into the past
+    every day this suite runs and would eventually make the reset implausible,
+    silently turning the two reconcile calls into independent passthroughs
+    that never share a bucket (a false-negative collision, defeating the
+    "FAILS pre-fix" acceptance proof). A wall-clock-relative near-future reset
+    keeps the identical-bucket collision deterministic regardless of when the
+    suite executes, while preserving the exact defect shape (two accounts,
+    one shared clock-aligned 5h bucket, 100 vs 50 real usage).
+    """
+    monkeypatch.setenv("HOME", str(tmp_path))
+    _write_config(tmp_path, show_forecast=False, show_projection=False)
+    import claude_statusbar.config as config
+    monkeypatch.setattr(config, "CONFIG_PATH", tmp_path / ".claude" / "claude-statusbar.json")
+
+    # Redirect the shared stores under tmp_path so this test never touches the
+    # real machine's cache/config, regardless of which code path (legacy
+    # hardcoded resolver pre-fix, or the new per-session resolver post-fix)
+    # actually determines the store filename.
+    monkeypatch.setattr(predict, "_LATEST_PATH", tmp_path / "cache" / "rate_latest.json")
+    monkeypatch.setattr(predict, "_PROJECTION_PATH", tmp_path / "cache" / "rate_projection.json")
+    monkeypatch.setattr(predict, "_CLAUDE_JSON_PATH", tmp_path / "does-not-exist-home.json")
+
+    acct1_dir = tmp_path / ".claude-account1"
+    acct2_dir = tmp_path / ".claude-account2"
+    _write_claude_json(acct1_dir / ".claude.json",
+                       uuid="e1605250-1111-2222-3333-444455556666")
+    _write_claude_json(acct2_dir / ".claude.json",
+                       uuid="c87262ba-1111-2222-3333-444455556666")
+    tp1 = acct1_dir / "projects" / "-enc-" / "sid1.jsonl"
+    tp2 = acct2_dir / "projects" / "-enc-" / "sid2.jsonl"
+    tp1.parent.mkdir(parents=True)
+    tp1.touch()
+    tp2.parent.mkdir(parents=True)
+    tp2.touch()
+
+    now = time.time()
+    resets_5h = now + 3600           # IDENTICAL clock-aligned reset — the live collision
+    resets_7d_1 = now + 6 * 86400
+    resets_7d_2 = now + 4 * 86400
+
+    payload1 = _payload_with_limits("s1", 100.0, resets_5h, 5.0, resets_7d_1,
+                                    transcript_path=str(tp1))
+    payload2 = _payload_with_limits("s2", 50.0, resets_5h, 3.0, resets_7d_2,
+                                    transcript_path=str(tp2))
+
+    from claude_statusbar.core import main
+
+    monkeypatch.setattr(sys, "stdin", io.StringIO(payload1))
+    main(use_color=False, _suppress_side_effects=True)
+    out1 = capsys.readouterr().out
+
+    monkeypatch.setattr(sys, "stdin", io.StringIO(payload2))
+    main(use_color=False, _suppress_side_effects=True)
+    out2 = capsys.readouterr().out
+
+    assert "100%" in out1   # account1 sees its own real 100%
+    assert "50%" in out2    # account2 sees its own real 50%
+    assert "100%" not in out2  # NOT account1's 100% (the live cross-account bug)
