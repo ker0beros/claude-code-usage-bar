@@ -197,6 +197,7 @@ Phases 1–8 are delivered (shipped in v3.29.11). Phase 9 is planned and not sta
 | 8. Distribution, Packaging & Auto-Update | v3.29.11 | Delivered | Complete | 2026-07-15 |
 | 9. Reliability & Maintainability Hardening | Hardening | 0/TBD | Not started | - |
 | 10. GSD Phase & Wave Indicator | unreleased | 2/2 | Complete | 2026-07-16 |
+| 11. Account Email Indicator | unreleased | 2/2 | Complete | 2026-07-16 |
 
 ### Phase 10: GSD Phase & Wave Indicator
 
@@ -214,3 +215,20 @@ Phases 1–8 are delivered (shipped in v3.29.11). Phase 9 is planned and not sta
 
 - [x] 10-01 — `planning.py` reader (STATE.md + wave/plan derivation) [Wave 1]
 - [x] 10-02 — `render_planning_line` + dispatcher wiring + core auto-show gate [Wave 2]
+
+### Phase 11: Account Email Indicator
+
+**Goal**: The status bar shows the logged-in Claude account's email as an opt-in `👤 <email>` chip on the identity line, resolved locally per-session, so a user running multiple accounts (via `CLAUDE_CONFIG_DIR`) sees which account each window is on.
+**Depends on**: Phase 4 (project/branch identity line)
+**Requirements**: EMAIL-01, EMAIL-02, EMAIL-03, EMAIL-04, EMAIL-05
+**Success Criteria** (what must be TRUE):
+
+  1. With `show_email` on, the identity line shows `👤 <email>` (the account's `oauthAccount.emailAddress`) before the version.
+  2. The email is resolved for *this* session's account — derived from `transcript_path` (daemon-safe) → `CLAUDE_CONFIG_DIR` → `~/.claude`, reading `<CONFIG_DIR>/.claude.json` (or `$HOME/.claude.json` for the default dir).
+  3. `show_email` defaults off; with it off, or when no email resolves (API-key users / missing `.claude.json`), the identity line is byte-for-byte unchanged.
+  4. The reader is pure filesystem (no network/subprocess), reads only `emailAddress`, and never raises into the render path.
+
+**Plans**: 2/2 plans executed. SPEC: `.planning/phases/11-account-email-indicator/11-SPEC.md`
+
+- [x] 11-01 — `account.py` email reader + `show_email` config + `CLAUDE_CONFIG_DIR` session-env key [Wave 1]
+- [x] 11-02 — `render_identity_line` email chip + `render()`/core wiring + tests [Wave 2]
