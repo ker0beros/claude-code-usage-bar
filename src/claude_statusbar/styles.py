@@ -529,7 +529,7 @@ def render_identity_line(info, *, theme: Theme, dirty,
                          ahead=None, behind=None,
                          duration_text: str = "", lines_text: str = "",
                          version_text: str = "", update_text: str = "",
-                         cwd_text: str = "",
+                         cwd_text: str = "", email_text: str = "",
                          use_color: bool = True) -> str:
     """Render the 2nd line: `⤷ <project> ⎇ <branch>●↑2↓1 · ⏱ <dur> · +/-lines`.
 
@@ -546,6 +546,10 @@ def render_identity_line(info, *, theme: Theme, dirty,
     `cwd_text` (show_cwd, #30) is the session's working directory; it's
     appended after the branch only when it adds information — skipped when it
     equals the project name (cwd at the repo root would just repeat the anchor).
+
+    `email_text` (show_email) is the logged-in account's email; it's appended as
+    a `👤 <email>` chip after the cwd segment and before the version, so a user
+    running multiple accounts sees which one this window is on. Empty → omitted.
     """
     ab = _ahead_behind_glyphs(ahead, behind) if info.in_git else ""
     stats = _stats_segment(duration_text, lines_text, theme=theme,
@@ -565,6 +569,8 @@ def render_identity_line(info, *, theme: Theme, dirty,
             tail += " [worktree]"
         if cwd_text and cwd_text != info.project_name:
             tail += f" · {cwd_text}"
+        if email_text:
+            tail += f" · 👤 {email_text}"
         ver = f" · v{version_text}" if version_text else ""
         if version_text and update_text:
             ver += f" ↑{update_text}"
@@ -595,6 +601,10 @@ def render_identity_line(info, *, theme: Theme, dirty,
         body += f" {MUTE}[worktree]{RESET}"
     if cwd_text and cwd_text != info.project_name:
         body += f" {MUTE}·{RESET} {INK}{cwd_text}{RESET}"
+    if email_text:
+        # Glyph in mute (secondary signal), the address itself in ink so it's
+        # readable at a glance — this is the "which account am I on?" cue.
+        body += f" {MUTE}· 👤{RESET} {INK}{email_text}{RESET}"
     # Version: the faintest thing on the line — edge (darkest grey) + dim
     # attribute, so it's there if you look for it but never competes for attention.
     ver = ""
@@ -995,6 +1005,7 @@ def render(style: str, **kwargs) -> str:
     duration_text = kwargs.pop("identity_duration", "")
     lines_text = kwargs.pop("identity_lines", "")
     cwd_text = kwargs.pop("cwd_text", "")
+    email_text = kwargs.pop("email_text", "")
     ip_line_text = kwargs.pop("ip_line_text", "")
     ip_line_level = kwargs.pop("ip_line_level", "ok")
     fp_line_text = kwargs.pop("fp_line_text", "")
@@ -1024,7 +1035,7 @@ def render(style: str, **kwargs) -> str:
             info, theme=theme, dirty=dirty, ahead=ahead, behind=behind,
             duration_text=duration_text, lines_text=lines_text,
             version_text=version_text, update_text=update_text,
-            cwd_text=cwd_text,
+            cwd_text=cwd_text, email_text=email_text,
             use_color=use_color,
         )
     elif cwd_text:

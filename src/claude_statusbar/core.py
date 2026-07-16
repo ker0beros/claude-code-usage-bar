@@ -1164,6 +1164,20 @@ def main(json_output: bool = False,
             ahead, behind = read_ahead_behind(info.toplevel)
             identity_kwargs["identity_ahead"] = ahead
             identity_kwargs["identity_behind"] = behind
+        # Optional logged-in-account email chip (show_email, opt-in). Resolved
+        # per-session from transcript_path (daemon-safe) → CLAUDE_CONFIG_DIR →
+        # ~/.claude; auto-hidden when unresolvable (API-key users, no
+        # .claude.json). Guarded so a missing/odd config can never break render.
+        if cfg.show_email:
+            try:
+                from .account import resolve_account_email
+                _email = resolve_account_email(
+                    stdin_data,
+                    env=stdin_data.get('_session_env') or os.environ)
+                if _email:
+                    identity_kwargs["email_text"] = _email
+            except Exception:
+                pass
     # Optional AgentParty line (#54): local-only cwd-scoped status cache. This
     # never imports or shells out to AgentParty and never reads tokens.
     #
