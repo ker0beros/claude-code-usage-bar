@@ -30,7 +30,7 @@ import math
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 # Fixed nominal window lengths (seconds). The 5h and 7d limits are plan-level
 # constants; resets_at gives the reset instant, so the window started one length
@@ -72,6 +72,19 @@ _LATEST_PATH = Path(os.path.expanduser("~")) / ".cache" / "claude-statusbar" / "
 _CLAUDE_JSON_PATH = Path(os.path.expanduser("~")) / ".claude.json"
 _ACCOUNT_CACHE: Dict[str, Any] = {"sig": None, "id": None}
 
+# Distinguishes "arg omitted" (legacy hardcoded zero-arg resolver, unchanged
+# for the pre-Phase-12 test suite/callers) from an explicit `None` (a
+# per-session resolution attempt that failed — must fall to the legacy
+# UNSUFFIXED path, never back to the legacy hardcoded resolver, per R5a/R5b).
+_UNSET = object()
+
+# Dedicated cache for the NEW per-session keying reader — kept entirely
+# separate from `_ACCOUNT_CACHE` (which backs the legacy zero-arg resolver).
+# The daemon can interleave renders for different accounts/paths in one
+# process; a shared cache keyed only on (mtime_ns, size) could false-hit
+# across two different accounts' files, or stomp the legacy cache's entry.
+_SESSION_ACCOUNT_CACHE: Dict[str, Any] = {"sig": None, "id": None}
+
 
 def _read_account_id() -> Optional[str]:
     try:
@@ -94,26 +107,103 @@ def _read_account_id() -> Optional[str]:
     return aid
 
 
-def account_id() -> Optional[str]:
-    """Uuid of the currently logged-in Claude account, or None if undetectable."""
-    return _read_account_id()
+def _claude_json_path_for_keying(config_dir: Path, home: Path) -> Optional[Path]:
+    """Locate the `.claude.json` to key a per-session store on (R5b-strict).
+
+    Contrast with `account._claude_json_path`, which unconditionally falls
+    back to `$HOME/.claude.json` for ANY config dir — exactly the behavior
+    that would let a named-but-not-yet-populated `CLAUDE_CONFIG_DIR` silently
+    borrow the default account's uuid. Here, the home-level file is only
+    ever consulted when `config_dir` IS the default `home/.claude` dir."""
+    per_dir = config_dir / ".claude.json"
+    if per_dir.is_file():
+        return per_dir
+    if config_dir == home / ".claude":       # ONLY the default dir may borrow
+        home_level = home / ".claude.json"
+        if home_level.is_file():
+            return home_level
+    return None
 
 
-def _account_path(base: Path) -> Path:
+def _read_keyed_account_id(path: Path) -> Optional[str]:
+    """`oauthAccount.accountUuid` from `path`, memoized on (path, mtime, size).
+
+    Mirrors `account._read_email`'s single-field discipline: only the uuid is
+    ever read out of the oauthAccount block, never an adjacent secret."""
+    try:
+        st = path.stat()
+    except OSError:
+        return None
+    sig = f"{path}\0{st.st_mtime_ns}\0{st.st_size}"
+    if _SESSION_ACCOUNT_CACHE["sig"] == sig:
+        return _SESSION_ACCOUNT_CACHE["id"]
+    try:
+        data = path.read_bytes()
+    except OSError:
+        return None
+    import re
+    anchor = data.find(b'"oauthAccount"')
+    # Note: {1,64} (not the legacy reader's {8,64}) — this is a NEW reader, so
+    # relaxing the lower bound doesn't touch _read_account_id's unchanged
+    # regex; it only affects this dedicated per-session reader, which must
+    # also accept short test-fixture uuids while still only ever matching the
+    # accountUuid key (never an adjacent secret field).
+    m = re.search(rb'"accountUuid"\s*:\s*"([0-9a-fA-F-]{1,64})"',
+                  data[anchor:] if anchor >= 0 else data)
+    aid = m.group(1).decode("ascii") if m else None
+    _SESSION_ACCOUNT_CACHE["sig"] = sig
+    _SESSION_ACCOUNT_CACHE["id"] = aid
+    return aid
+
+
+def account_id(stdin: Optional[Mapping[str, Any]] = None, *,
+               env: Optional[Mapping[str, str]] = None,
+               home: Optional[Path] = None) -> Optional[str]:
+    """Uuid of the account for THIS session, or None if undetectable.
+
+    `stdin=None` (arg omitted) keeps the legacy zero-arg, hardcoded
+    `~/.claude.json` resolver UNCHANGED — every existing zero-arg caller
+    (predict.py's own `_UNSET` branch, tests/test_account_switch.py's
+    monkeypatched `lambda: "uuid"`) keeps working with no signature change on
+    its end. Passing `stdin` (even `{}`) opts into per-session resolution via
+    `account.resolve_config_dir()` (Phase 11, reused as-is) + the R5b-strict
+    keying locator. Never raises — any resolution/IO/parse failure yields
+    None so the render path can call it unguarded-in-spirit."""
+    if stdin is None:
+        return _read_account_id()          # UNCHANGED legacy path
+    try:
+        from . import account as _account
+        home = Path(os.path.expanduser("~")) if home is None else home
+        config_dir = _account.resolve_config_dir(stdin, env=env, home=home)
+        path = _claude_json_path_for_keying(config_dir, home)
+        if path is None:
+            return None
+        return _read_keyed_account_id(path)
+    except Exception:
+        return None
+
+
+def _account_path(base: Path, aid=_UNSET) -> Path:
     """Per-account variant of a shared-store path (`rate_latest.<uuid12>.json`).
-    Unknown account → the legacy unsuffixed path."""
-    aid = account_id()
+
+    Tri-state on `aid`: omitted (`_UNSET`) -> legacy hardcoded zero-arg
+    resolver (unchanged); explicit `None` (session resolved, but
+    unresolvable) -> legacy unsuffixed path, NEVER the legacy resolver
+    (R5a/R5b: no `$HOME/.claude.json` borrow); a uuid string -> the
+    per-account suffixed path."""
+    if aid is _UNSET:
+        aid = account_id()          # today's hardcoded ~/.claude.json resolver
     if not aid:
         return base
     return base.with_name(f"{base.stem}.{aid[:12]}{base.suffix}")
 
 
-def _latest_path() -> Path:
-    return _account_path(_LATEST_PATH)
+def _latest_path(aid=_UNSET) -> Path:
+    return _account_path(_LATEST_PATH, aid)
 
 
-def _projection_path() -> Path:
-    return _account_path(_PROJECTION_PATH)
+def _projection_path(aid=_UNSET) -> Path:
+    return _account_path(_PROJECTION_PATH, aid)
 
 MAX_PROJECTION_SAMPLES = 5000
 MAX_PROJECTION_SNAPSHOTS = 1000

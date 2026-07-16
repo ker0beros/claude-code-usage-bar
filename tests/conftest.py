@@ -14,9 +14,19 @@ def _isolate_rate_latest(tmp_path, monkeypatch):
         monkeypatch.setattr(predict, "_LATEST_PATH", tmp_path / "rate_latest.json")
         monkeypatch.setattr(predict, "_PROJECTION_PATH", tmp_path / "rate_projection.json")
         # Stores are account-keyed (suffix from ~/.claude.json); pin the
-        # account to "unknown" so tests get the exact paths they monkeypatch,
-        # independent of the developer's real login. Account-switch tests
-        # override this stub locally.
-        monkeypatch.setattr(predict, "account_id", lambda: None)
+        # ZERO-ARG (legacy) resolution to "unknown" so tests get the exact
+        # paths they monkeypatch, independent of the developer's real login.
+        # Account-switch tests override this stub locally. Per-session calls
+        # (predict.account_id(stdin, env=, home=) — Phase 12) are NOT pinned:
+        # they pass through to the real resolver so tests exercising that
+        # per-session resolution logic see genuine behavior, not a stub.
+        _real_account_id = predict.account_id
+
+        def _pinned_account_id(stdin=None, **kwargs):
+            if stdin is None:
+                return None
+            return _real_account_id(stdin, **kwargs)
+
+        monkeypatch.setattr(predict, "account_id", _pinned_account_id)
     except Exception:
         pass
