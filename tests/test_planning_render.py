@@ -27,24 +27,24 @@ def test_render_none_is_empty():
 
 def test_render_executing_circles_no_color():
     out = render_planning_line(_executing(), theme=THEME, use_color=False)
-    assert out == "gsd 6/9 ●● ○"
+    assert out == "gsd 6 ●● ○"
 
 
 def test_render_done_shows_word_no_circles():
     ps = PlanningStatus(current_phase=6, total_phases=9, state="done")
     out = render_planning_line(ps, theme=THEME, use_color=False)
-    assert out == "gsd 6/9 done"
+    assert out == "gsd 6 done"
     assert "●" not in out and "○" not in out
 
 
 def test_render_idle_shows_idle_word():
     ps = PlanningStatus(current_phase=2, total_phases=9, state="idle")
-    assert render_planning_line(ps, theme=THEME, use_color=False) == "gsd 2/9 idle"
+    assert render_planning_line(ps, theme=THEME, use_color=False) == "gsd 2 idle"
 
 
 def test_render_executing_without_waves_is_phase_only():
     ps = PlanningStatus(current_phase=7, total_phases=9, state="executing", waves=())
-    assert render_planning_line(ps, theme=THEME, use_color=False) == "gsd 7/9"
+    assert render_planning_line(ps, theme=THEME, use_color=False) == "gsd 7"
 
 
 def test_render_colors_per_wave_state():
@@ -53,6 +53,50 @@ def test_render_colors_per_wave_state():
     yellow = "\033[38;2;{};{};{}m".format(*THEME.s_warn)
     assert green + "●●" in out       # complete wave → green
     assert yellow + "○" in out       # active wave → yellow
+
+
+# --- part 2: remaining-phases bracket ------------------------------------
+
+def test_render_pending_bracket_after_word():
+    ps = PlanningStatus(current_phase=4, total_phases=12, state="planning",
+                        pending_after=(10, 11, 12))
+    out = render_planning_line(ps, theme=THEME, use_color=False)
+    assert out == "gsd 4 planning [10, 11, 12]"
+
+
+def test_render_no_bracket_when_pending_empty():
+    ps = PlanningStatus(current_phase=9, total_phases=12, state="planning",
+                        pending_after=())
+    out = render_planning_line(ps, theme=THEME, use_color=False)
+    assert out == "gsd 9 planning"
+    assert "[" not in out
+
+
+def test_render_circles_before_bracket_when_executing():
+    ps = PlanningStatus(
+        current_phase=6, total_phases=12, state="executing",
+        pending_after=(7, 8),
+        waves=(WaveGroup(wave=1, done=(True, True), state="complete"),
+               WaveGroup(wave=2, done=(False,), state="active")),
+    )
+    out = render_planning_line(ps, theme=THEME, use_color=False)
+    # word is empty while executing; circles sit between phase and the bracket
+    assert out == "gsd 6 ●● ○ [7, 8]"
+    assert out.index("○") < out.index("[")
+
+
+def test_render_done_last_phase_no_bracket():
+    ps = PlanningStatus(current_phase=13, total_phases=13, state="done",
+                        pending_after=())
+    assert render_planning_line(ps, theme=THEME, use_color=False) == "gsd 13 done"
+
+
+def test_render_bracket_is_muted():
+    ps = PlanningStatus(current_phase=4, total_phases=12, state="planning",
+                        pending_after=(10, 11))
+    out = render_planning_line(ps, theme=THEME, use_color=True)
+    mute = "\033[38;2;{};{};{}m".format(*THEME.mute)
+    assert mute + "[10, 11]" in out    # bracket rendered in the mute color
 
 
 # --- dispatcher ----------------------------------------------------------
@@ -64,7 +108,7 @@ _BASE = dict(msgs_pct=10, weekly_pct=20, model="Opus 4.8",
 def test_dispatcher_appends_planning_line():
     out = render("classic", planning=_executing(), **_BASE)
     lines = out.split("\n")
-    assert lines[-1] == "gsd 6/9 ●● ○"
+    assert lines[-1] == "gsd 6 ●● ○"
 
 
 def test_dispatcher_no_planning_appends_nothing():
@@ -75,7 +119,7 @@ def test_dispatcher_no_planning_appends_nothing():
 def test_dispatcher_planning_line_in_all_styles():
     for style in ("classic", "capsule", "hairline"):
         out = render(style, planning=_executing(), **_BASE)
-        assert "gsd 6/9 ●● ○" in out
+        assert "gsd 6 ●● ○" in out
 
 
 # --- core auto-show seam -------------------------------------------------
@@ -132,7 +176,7 @@ def test_core_autoshows_when_planning_present(tmp_path, monkeypatch, capsys):
     _make_state(project, status="executing")
     _run(tmp_path, monkeypatch, project)
     out = capsys.readouterr().out
-    assert "gsd 6/9 ●● ○" in out
+    assert "gsd 6 ●● ○" in out
 
 
 def test_core_done_status_renders_word(tmp_path, monkeypatch, capsys):
@@ -141,7 +185,7 @@ def test_core_done_status_renders_word(tmp_path, monkeypatch, capsys):
     _make_state(project, status="phase-complete")
     _run(tmp_path, monkeypatch, project)
     out = capsys.readouterr().out
-    assert "gsd 6/9 done" in out
+    assert "gsd 6 done" in out
 
 
 def test_core_unchanged_when_no_planning(tmp_path, monkeypatch, capsys):

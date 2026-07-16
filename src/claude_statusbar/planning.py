@@ -93,6 +93,11 @@ class PlanningStatus:
     phase_name: str = ""
     state: str = "idle"         # normalized state token
     waves: Tuple[WaveGroup, ...] = ()
+    # Phase numbers > current_phase that are NOT yet complete — the "remaining"
+    # phases rendered as the ``[…]`` part 2 of the gsd line. Done phases are
+    # excluded even when their number is above current (brownfield out-of-order
+    # completion), so this is derived from ROADMAP.md, not from current/total.
+    pending_after: Tuple[int, ...] = ()
 
 
 def _plan_wave(path: Path) -> Optional[int]:
@@ -166,6 +171,47 @@ def _read_waves(root: Path, current_phase: int) -> Tuple[WaveGroup, ...]:
     return tuple(groups)
 
 
+# Phase completion sources in ROADMAP.md: the checklist (``- [x] **Phase N: …**``)
+# and the progress-table rows (``| N. Name | … | Complete | …``). A phase counts
+# as done if EITHER marks it done — so an out-of-order-completed phase whose
+# number is above the current one is still excluded from the remaining list.
+_ROADMAP_CHECK_RE = re.compile(r"^\s*-\s*\[([ xX])\]\s*\*\*Phase\s+(\d+)", re.MULTILINE)
+_ROADMAP_ROW_RE = re.compile(r"^\|\s*(\d+)\.\s")
+
+
+def _read_pending_after(root: Path, current_phase: int) -> Tuple[int, ...]:
+    """Phase numbers greater than ``current_phase`` that are NOT complete.
+
+    Parsed from ``ROADMAP.md`` (checklist + progress table, union of "done").
+    Returns ``()`` on any missing-file/parse issue — never raises into the
+    render path. Result is sorted ascending and de-duplicated.
+    """
+    try:
+        text = (root / "ROADMAP.md").read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return ()
+    seen: set = set()
+    done: set = set()
+    for m in _ROADMAP_CHECK_RE.finditer(text):
+        n = _to_int(m.group(2))
+        if n is None:
+            continue
+        seen.add(n)
+        if m.group(1).lower() == "x":
+            done.add(n)
+    for line in text.splitlines():
+        m = _ROADMAP_ROW_RE.match(line)
+        if not m:
+            continue
+        n = _to_int(m.group(1))
+        if n is None:
+            continue
+        seen.add(n)
+        if "Complete" in line:
+            done.add(n)
+    return tuple(sorted(n for n in seen if n > current_phase and n not in done))
+
+
 def read_planning_status(
     cwd: Union[str, Path],
     *,
@@ -195,6 +241,7 @@ def read_planning_status(
     state = _normalize_state(fm.get("status", ""))
 
     waves = _read_waves(root, current_phase) if state == "executing" else ()
+    pending_after = _read_pending_after(root, current_phase)
 
     return PlanningStatus(
         current_phase=current_phase,
@@ -202,4 +249,5 @@ def read_planning_status(
         phase_name=phase_name,
         state=state,
         waves=waves,
+        pending_after=pending_after,
     )

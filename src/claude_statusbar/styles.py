@@ -786,14 +786,16 @@ _GSD_STATE_WORD = {
 
 def render_planning_line(planning, *, theme: Theme = None,
                          use_color: bool = True) -> str:
-    """Render the GSD phase/wave indicator: ``gsd 6/9 ●● ○``.
+    """Render the GSD phase/wave indicator in two parts: ``gsd 9 planning [10, 11]``.
 
-    Phase is text ``current/total`` (Option A). While executing, one circle per
-    plan in the current phase (``●`` done / ``○`` pending), grouped by wave with
-    a space between groups, each group colored by its wave state — green
-    (complete) / yellow (active) / grey (future) from the active theme palette
-    (Option B). When not executing, a status word replaces the circles
-    (``gsd 6/9 done``). Returns ``""`` when there is no planning state.
+    Part 1 is the current phase number + status word (``gsd {current} {word}``);
+    the word is empty while executing (the wave circles convey it). Part 2 is the
+    ``[…]`` list of *remaining* phases — numbers above the current phase that are
+    not yet complete (grey), omitted entirely when empty. While executing, one
+    circle per plan in the current phase (``●`` done / ``○`` pending), grouped by
+    wave and colored by wave state — green (complete) / yellow (active) / grey
+    (future) — sits between the word and the bracket:
+    ``gsd 9 ●● ○ [10, 11]``. Returns ``""`` when there is no planning state.
     """
     if planning is None:
         return ""
@@ -801,9 +803,9 @@ def render_planning_line(planning, *, theme: Theme = None,
     current = _attr(planning, "current_phase", None)
     if current is None:
         return ""
-    total = _attr(planning, "total_phases", 0) or 0
     state = str(_attr(planning, "state", "") or "")
     waves = _attr(planning, "waves", ()) or ()
+    pending = _attr(planning, "pending_after", ()) or ()
 
     MUTE = _fg(theme.mute)
     INK = _fg(theme.ink)
@@ -813,9 +815,15 @@ def render_planning_line(planning, *, theme: Theme = None,
         "future": MUTE,
     }
 
-    parts = [f"{MUTE}gsd{RESET}",
-             f"{INK}{current}/{total}{RESET}" if total else f"{INK}{current}{RESET}"]
+    # Part 1: gsd + current phase (no more current/total fraction).
+    parts = [f"{MUTE}gsd{RESET}", f"{INK}{current}{RESET}"]
 
+    # Status word — empty while executing (the circles convey that state).
+    word = _GSD_STATE_WORD.get(state, "idle")
+    if word:
+        parts.append(f"{MUTE}{word}{RESET}")
+
+    # Wave circles during execution, positioned before the remaining bracket.
     if state == "executing" and waves:
         groups = []
         for wg in waves:
@@ -825,10 +833,12 @@ def render_planning_line(planning, *, theme: Theme = None,
                 groups.append(f"{col}{circles}{RESET}")
         if groups:
             parts.append(" ".join(groups))
-    else:
-        word = _GSD_STATE_WORD.get(state, "idle")
-        if word:
-            parts.append(f"{MUTE}{word}{RESET}")
+
+    # Part 2: remaining phases (numbered above current, not yet complete), grey.
+    # Omitted when empty (nothing above current is pending).
+    if pending:
+        nums = ", ".join(str(n) for n in pending)
+        parts.append(f"{MUTE}[{nums}]{RESET}")
 
     out = " ".join(parts)
     return out if use_color else _strip(out)

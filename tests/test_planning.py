@@ -6,6 +6,7 @@ from claude_statusbar.planning import (
     PlanningStatus,
     WaveGroup,
     _normalize_state,
+    _read_pending_after,
     read_planning_status,
 )
 
@@ -132,6 +133,68 @@ def test_planning_root_override(tmp_path):
     _make_planning(tmp_path, status="executing")  # creates tmp_path/.planning
     # point at a bespoke root that has no STATE.md
     assert read_planning_status(str(tmp_path), planning_root=root) is None
+
+
+# --- pending_after (part 2: remaining-phases bracket) --------------------
+
+def _write_roadmap(pl: Path, text: str):
+    (pl / "ROADMAP.md").write_text(text, encoding="utf-8")
+
+
+def test_pending_after_from_checklist(tmp_path):
+    """Forward march: done phases excluded, only phases > current + pending."""
+    pl = _make_planning(tmp_path, status="planning", current_phase=3)
+    _write_roadmap(pl,
+        "- [x] **Phase 1: A** - done\n"
+        "- [x] **Phase 2: B** - done\n"
+        "- [ ] **Phase 3: C** - current\n"
+        "- [ ] **Phase 4: D** - pending\n"
+        "- [ ] **Phase 5: E** - pending\n")
+    ps = read_planning_status(str(tmp_path))
+    assert ps.pending_after == (4, 5)
+
+
+def test_pending_after_excludes_done_above_current(tmp_path):
+    """Brownfield: phases numbered above current but already complete are OUT."""
+    pl = _make_planning(tmp_path, status="planning", current_phase=9,
+                        total_phases=12)
+    _write_roadmap(pl,
+        "".join(f"- [x] **Phase {i}: P{i}** - delivered\n" for i in range(1, 9))
+        + "- [ ] **Phase 9: Hardening** - planned\n\n"
+        + "| Phase | Milestone | Plans | Status | Completed |\n|--|--|--|--|--|\n"
+        + "".join(f"| {i}. P{i} | v | d | Complete | date |\n"
+                 for i in (10, 11, 12))
+        + "| 9. Hardening | H | 0 | Not started | - |\n")
+    ps = read_planning_status(str(tmp_path))
+    assert ps.pending_after == ()          # 10,11,12 done → excluded; 9 is current
+
+
+def test_pending_after_ignores_phases_below_current(tmp_path):
+    pl = _make_planning(tmp_path, status="planning", current_phase=4)
+    _write_roadmap(pl,
+        "- [ ] **Phase 2: B** - pending but below current\n"
+        "- [ ] **Phase 4: D** - current\n"
+        "- [ ] **Phase 6: F** - pending\n")
+    ps = read_planning_status(str(tmp_path))
+    assert ps.pending_after == (6,)        # phase 2 pending but < current → excluded
+
+
+def test_pending_after_empty_without_roadmap(tmp_path):
+    _make_planning(tmp_path, status="planning", current_phase=3)  # no ROADMAP.md
+    ps = read_planning_status(str(tmp_path))
+    assert ps.pending_after == ()
+
+
+def test_read_pending_after_table_only(tmp_path):
+    """A phase present only in the progress table is still classified."""
+    pl = tmp_path / ".planning"
+    pl.mkdir(parents=True)
+    _write_roadmap(pl,
+        "| Phase | Status |\n|--|--|\n"
+        "| 5. Done | Complete |\n"
+        "| 6. Todo | Not started |\n"
+        "| 7. Todo | Not started |\n")
+    assert _read_pending_after(pl, current_phase=4) == (6, 7)   # 5 complete → out
 
 
 def test_normalize_state_variants():
