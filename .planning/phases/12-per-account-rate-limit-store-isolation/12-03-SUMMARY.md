@@ -143,3 +143,8 @@ None - no external service configuration required.
 ---
 *Phase: 12-per-account-rate-limit-store-isolation*
 *Completed: 2026-07-16*
+
+## Self-Check: PASSED
+- FOUND: src/claude_statusbar/core.py
+- FOUND commit: 1ada591 (Task 1)
+- FOUND commit: 2f69511 (SUMMARY docs commit)

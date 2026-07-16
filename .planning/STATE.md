@@ -4,9 +4,9 @@ milestone: v3.29.11
 milestone_name: milestone
 current_phase: 12
 current_phase_name: Per-Account Rate-Limit Store Isolation
-status: executing
-stopped_at: Completed 12-02-PLAN.md
-last_updated: "2026-07-16T09:38:27.578Z"
+status: verifying
+stopped_at: Completed 12-03-PLAN.md
+last_updated: "2026-07-16T09:46:52.207Z"
 last_activity: 2026-07-16
 last_activity_desc: Phase 12 execution started
 progress:
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-07-15)
 
 Phase: 12 (Per-Account Rate-Limit Store Isolation) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-07-16 — Phase 12 execution started
 
 Progress: [██████████] 91% (10 of 11 phases complete; Phase 6, 10 & 11 implemented & verified, unreleased; Phase 9 planned)
@@ -63,6 +63,7 @@ Progress: [██████████] 91% (10 of 11 phases complete; Phase 
 | Phase 06 P03 | 35min | 2 tasks | 4 files (+2 created) |
 | Phase 12 P01 | 25min | 2 tasks | 1 files |
 | Phase 12 P02 | 20min | 2 tasks | 2 files |
+| Phase 12 P03 | 12min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -84,6 +85,8 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - [Phase ?]: (12-01) e2e regression test computes its shared 5h resets_at as time.time()+3600 instead of the SPEC-literal historical epoch, so reconcile_account's anti-poison reset-plausibility guard never rejects it regardless of run date — keeps the FAILS-pre-fix proof deterministic.
 - [Phase ?]: [Rule 1] Relaxed _read_keyed_account_id's uuid regex bound to {1,64} (legacy reader's {8,64} unchanged) to accept short test-fixture uuids
 - [Phase ?]: [Rule 3] Fixed tests/conftest.py's autouse account_id stub to pass through to the real resolver for stdin-bearing calls, preserving the zero-arg pin
+- [Phase ?]: (12-03) core.main() resolves _resolved_account_uuid once (guarded, never-raise) after _effective_env and threads it into reconcile_account/projection/forecast/quota_cache_status; the R3 e2e regression test is GREEN post-fix / RED pre-fix (manual proof performed).
+- [Phase ?]: (12-03) Flagged (not fixed, out-of-scope per plan's file boundary): tests/test_regime_detection.py's 2 core.main() tests don't isolate CLAUDE_CONFIG_DIR, causing spurious failures on any machine with it exported — recommend a follow-up quick task adding monkeypatch.delenv.
 
 ### Quick Tasks Completed
 
@@ -125,8 +128,8 @@ Items acknowledged and carried forward:
 
 ## Session Continuity
 
-Last session: 2026-07-16T09:38:27.573Z
-Stopped at: Completed 12-02-PLAN.md
+Last session: 2026-07-16T09:46:52.202Z
+Stopped at: Completed 12-03-PLAN.md
 
 Prior session: 2026-07-15
 Stopped at: Completed quick task 260715-pic (opt-in Firecrawl+Tavily search-provider credit bars), then two fast env-sourcing fixes for the shared-daemon render path: (1) search block sources provider keys from os.environ; (2) relay_balance() falls back to os.environ for ANTHROPIC_API_KEY/AUTH_TOKEN (base_url stays session-only) so the bal $… gauge renders live. +3 regression tests total, full suite 1024 passed (1 pre-existing version_sync failure deferred).
