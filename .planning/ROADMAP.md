@@ -198,6 +198,7 @@ Phases 1–8 are delivered (shipped in v3.29.11). Phase 9 is planned and not sta
 | 9. Reliability & Maintainability Hardening | Hardening | 0/TBD | Not started | - |
 | 10. GSD Phase & Wave Indicator | unreleased | 2/2 | Complete | 2026-07-16 |
 | 11. Account Email Indicator | unreleased | 2/2 | Complete | 2026-07-16 |
+| 12. Per-Account Rate-Limit Store Isolation | unreleased | 0/TBD | Not started | - |
 
 ### Phase 10: GSD Phase & Wave Indicator
 
@@ -232,3 +233,23 @@ Phases 1–8 are delivered (shipped in v3.29.11). Phase 9 is planned and not sta
 
 - [x] 11-01 — `account.py` email reader + `show_email` config + `CLAUDE_CONFIG_DIR` session-env key [Wave 1]
 - [x] 11-02 — `render_identity_line` email chip + `render()`/core wiring + tests [Wave 2]
+
+### Phase 12: Per-Account Rate-Limit Store Isolation
+
+**Goal**: The rate-limit reconcile store is keyed by the *session's own* Claude account, so multiple simultaneously logged-in accounts (via `CLAUDE_CONFIG_DIR`) never share a store bucket — each window's 5h/7d bars reflect only its own account's usage.
+**Depends on**: Phase 5 (rate-limit prediction & learning — owns `predict.py` store keying), Phase 11 (account.py per-session config-dir resolver)
+**Requirements**: TBD (define in SPEC)
+
+**Problem (observed 2026-07-16)**: `predict._read_account_id()` reads a hardcoded `~/.claude.json` and ignores `CLAUDE_CONFIG_DIR`, so every logged-in account resolves to the *same* UUID (whatever the default `~/.claude.json` holds) and writes into one shared store file `rate_latest.<uuid>.json`. Anthropic clock-aligns the 5h window, so different accounts share the same 5h `resets_at` and land in the same per-reset bucket; the monotonic-up healing rule then pins that bucket to the *max* reading across accounts. Live: account2 (real 5h 50%) rendered account1's 100%. The 7d bar was unaffected only because the two accounts' 7d `resets_at` differ, keeping them in separate buckets.
+
+**Success Criteria** (what must be TRUE):
+
+  1. `predict.account_id()` resolves the UUID from *this session's* config dir using the same precedence as `account.py` (`transcript_path` → `CLAUDE_CONFIG_DIR` → `~/.claude`), reading `<CONFIG_DIR>/.claude.json` (or `$HOME/.claude.json` for the default dir) — daemon-safe (does not depend on the daemon's frozen `os.environ`).
+  2. Two accounts logged in simultaneously whose 5h windows share an identical `resets_at` key to *distinct* store files and never read each other's bucket; each account's 5h bar shows its own usage.
+  3. Session context is threaded so `reconcile_account`, `projection`, `forecast`, and `quota_cache_status` all key the store by the correct per-session account; no store read/write falls back to the hardcoded `~/.claude.json` when a session config dir is resolvable.
+  4. When no session config dir is resolvable (API-key users / no `.claude.json`), behavior is unchanged from today (legacy unsuffixed store path).
+  5. A regression test reproduces the collision (two accounts, same 5h `resets_at`, different `used_percentage`) and asserts each account renders its own value.
+
+**Plans**: TBD (run `/gsd-plan-phase 12` to break down)
+
+- [ ] TBD (run /gsd-plan-phase 12 to break down)

@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-07-15)
 
 ## Current Position
 
-Phase: 11 of 11 (Account Email Indicator) — COMPLETE. Phases 1–5, 7, 8 delivered in v3.29.11; Phase 6, 10 & 11 implemented (unreleased); Phase 9 planned.
+Phase: 11 of 12 (Account Email Indicator) — COMPLETE. Phase 12 (Per-Account Rate-Limit Store Isolation) added, not started. Phases 1–5, 7, 8 delivered in v3.29.11; Phase 6, 10 & 11 implemented (unreleased); Phase 9 planned.
 Plan: 2 of 2 in current phase (11-01 account.py reader + show_email config done, 11-02 identity-line chip + core wiring + tests done)
 Status: Phase 11 complete — opt-in `👤 <email>` chip on the identity line, resolved per-session per-account; default off; identity line byte-for-byte unchanged when off or unresolvable
 Last activity: 2026-07-16 — Completed Phase 11: account-email indicator (account.py reader + render_identity_line email chip + core wiring, show_email default off); +24 tests, full suite 1090 passed
@@ -92,6 +92,10 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 ### Pending Todos
 
 None yet.
+
+### Roadmap Evolution
+
+- Phase 12 added (2026-07-16): Per-Account Rate-Limit Store Isolation. Diagnosed live — the 5h bar showed 100% on account2 (real 50%) because `predict._read_account_id()` hardcodes `~/.claude.json` and ignores `CLAUDE_CONFIG_DIR`, collapsing all logged-in accounts into one shared reconcile store; the clock-aligned 5h window makes accounts share a `resets_at` bucket, and monotonic-up healing pins it to account1's 100%. Fix: key the store per-session via account.py's resolver. Depends on Phase 5 + Phase 11.
 
 ### Blockers/Concerns
 
