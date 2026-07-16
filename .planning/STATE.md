@@ -2,19 +2,18 @@
 gsd_state_version: 1.0
 milestone: v3.29.11
 milestone_name: milestone
-current_phase: 11
-current_phase_name: Account Email Indicator
+current_phase: 12
+current_phase_name: Per-Account Rate-Limit Store Isolation
 status: executing
 stopped_at: Phase 11 complete — opt-in account-email chip (👤 <email>) on the identity line, 24 new tests, full suite 1090 passed
-last_updated: "2026-07-16T09:17:55.901Z"
+last_updated: "2026-07-16T09:20:12.866Z"
 last_activity: 2026-07-16
-last_activity_desc: "Completed Phase 11: account-email indicator (account.py reader + render_identity_line email chip + core wiring, show_email default off); +24 tests, full suite 1090 passed"
+last_activity_desc: Phase 12 execution started
 progress:
-  total_phases: 11
-  completed_phases: 10
-  total_plans: 2
-  completed_plans: 2
-  percent: 91
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # Project State
@@ -24,14 +23,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-15)
 
 **Core value:** At-a-glance rate-limit / context / model / cost visibility in the Claude Code status line — fast, within budget, zero required deps.
-**Current focus:** Phase 11 complete (account-email indicator, implemented, unreleased). Phase 9 — Reliability & Maintainability Hardening — remains planned.
+**Current focus:** Phase 12 — Per-Account Rate-Limit Store Isolation
 
 ## Current Position
 
-Phase: 11 of 12 (Account Email Indicator) — COMPLETE. Phase 12 (Per-Account Rate-Limit Store Isolation) added, not started. Phases 1–5, 7, 8 delivered in v3.29.11; Phase 6, 10 & 11 implemented (unreleased); Phase 9 planned.
-Plan: 2 of 2 in current phase (11-01 account.py reader + show_email config done, 11-02 identity-line chip + core wiring + tests done)
-Status: Ready to execute
-Last activity: 2026-07-16 — Completed Phase 11: account-email indicator (account.py reader + render_identity_line email chip + core wiring, show_email default off); +24 tests, full suite 1090 passed
+Phase: 12 (Per-Account Rate-Limit Store Isolation) — EXECUTING
+Plan: 1 of 3
+Status: Executing Phase 12
+Last activity: 2026-07-16 — Phase 12 execution started
 
 Progress: [██████████] 91% (10 of 11 phases complete; Phase 6, 10 & 11 implemented & verified, unreleased; Phase 9 planned)
 
