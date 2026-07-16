@@ -171,20 +171,29 @@ def _read_waves(root: Path, current_phase: int) -> Tuple[WaveGroup, ...]:
     return tuple(groups)
 
 
-# Phase completion sources in ROADMAP.md: the checklist (``- [x] **Phase N: …**``)
-# and the progress-table rows (``| N. Name | … | Complete | …``). A phase counts
-# as done if EITHER marks it done — so an out-of-order-completed phase whose
-# number is above the current one is still excluded from the remaining list.
+# Phase-existence + completion sources in ROADMAP.md, in decreasing done-signal
+# strength: the checklist (``- [x] **Phase N: …**``), the progress-table rows
+# (``| N. Name | … | Complete | …``), and — for existence only — detail-section
+# headers (``### Phase N: …``). A phase counts as done if the checklist or table
+# marks it done; a phase seen only as a header carries no done-signal, so it is
+# pending by default. Headers matter because large roadmaps often list only the
+# early phases in the checklist/table and enumerate the rest as ``### Phase N``
+# sections — without this, every not-yet-tabled future phase was invisible to
+# the remaining-phases bracket.
 _ROADMAP_CHECK_RE = re.compile(r"^\s*-\s*\[([ xX])\]\s*\*\*Phase\s+(\d+)", re.MULTILINE)
 _ROADMAP_ROW_RE = re.compile(r"^\|\s*(\d+)\.\s")
+_ROADMAP_HEADER_RE = re.compile(r"^\s*#{2,6}\s+Phase\s+(\d+)\b", re.MULTILINE)
 
 
 def _read_pending_after(root: Path, current_phase: int) -> Tuple[int, ...]:
     """Phase numbers greater than ``current_phase`` that are NOT complete.
 
-    Parsed from ``ROADMAP.md`` (checklist + progress table, union of "done").
-    Returns ``()`` on any missing-file/parse issue — never raises into the
-    render path. Result is sorted ascending and de-duplicated.
+    Parsed from ``ROADMAP.md``: phase existence comes from the checklist,
+    progress-table rows, AND ``### Phase N`` detail-section headers (so phases
+    that appear only as headers are still counted); "done" is the union of the
+    checklist ``[x]`` and table ``Complete`` markers. Returns ``()`` on any
+    missing-file/parse issue — never raises into the render path. Result is
+    sorted ascending and de-duplicated.
     """
     try:
         text = (root / "ROADMAP.md").read_text(encoding="utf-8", errors="replace")
@@ -209,6 +218,12 @@ def _read_pending_after(root: Path, current_phase: int) -> Tuple[int, ...]:
         seen.add(n)
         if "Complete" in line:
             done.add(n)
+    # Detail-section headers establish existence only (no done-signal): a phase
+    # seen solely as `### Phase N` and never marked complete is pending.
+    for m in _ROADMAP_HEADER_RE.finditer(text):
+        n = _to_int(m.group(1))
+        if n is not None:
+            seen.add(n)
     return tuple(sorted(n for n in seen if n > current_phase and n not in done))
 
 

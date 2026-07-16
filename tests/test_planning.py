@@ -185,6 +185,33 @@ def test_pending_after_empty_without_roadmap(tmp_path):
     assert ps.pending_after == ()
 
 
+def test_pending_after_reads_section_headers(tmp_path):
+    """central-flutter shape: early phases in checklist/table, later phases only
+    as ``### Phase N`` headers — the header phases still count as pending."""
+    pl = _make_planning(tmp_path, status="verifying", current_phase=23,
+                        total_phases=35)
+    _write_roadmap(pl,
+        "- [x] **Phase 1: A** - done\n"
+        "- [ ] **Phase 3: C** - pending early\n\n"
+        "| Phase | Status |\n|--|--|\n"
+        "| 1. A | Complete |\n"
+        "| 13. M | Complete |\n\n"
+        + "".join(f"### Phase {i}: Section {i}\nprose\n\n" for i in range(23, 36)))
+    ps = read_planning_status(str(tmp_path))
+    assert ps.pending_after == tuple(range(24, 36))   # 24..35 header-only → pending
+
+
+def test_pending_after_header_phase_marked_complete_excluded(tmp_path):
+    """A header phase above current that IS marked complete (table) is excluded."""
+    pl = _make_planning(tmp_path, status="planning", current_phase=5)
+    _write_roadmap(pl,
+        "### Phase 6: Done section\n\n"
+        "### Phase 7: Todo section\n\n"
+        "| 6. Done | Complete |\n")
+    ps = read_planning_status(str(tmp_path))
+    assert ps.pending_after == (7,)          # 6 complete via table, 7 header-only
+
+
 def test_read_pending_after_table_only(tmp_path):
     """A phase present only in the progress table is still classified."""
     pl = tmp_path / ".planning"
