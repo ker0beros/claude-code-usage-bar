@@ -5,8 +5,8 @@ milestone_name: milestone
 current_phase: 12
 current_phase_name: Per-Account Rate-Limit Store Isolation
 status: executing
-stopped_at: Completed 12-01-PLAN.md (Nyquist Wave 0 isolation test suite, 12 tests, RED confirmed against current predict.py/core.py)
-last_updated: "2026-07-16T09:29:59.507Z"
+stopped_at: Completed 12-02-PLAN.md
+last_updated: "2026-07-16T09:38:27.578Z"
 last_activity: 2026-07-16
 last_activity_desc: Phase 12 execution started
 progress:
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-07-15)
 ## Current Position
 
 Phase: 12 (Per-Account Rate-Limit Store Isolation) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-07-16 — Phase 12 execution started
 
@@ -62,6 +62,7 @@ Progress: [██████████] 91% (10 of 11 phases complete; Phase 
 | Phase 06 P02 | 20min | 2 tasks | 2 files |
 | Phase 06 P03 | 35min | 2 tasks | 4 files (+2 created) |
 | Phase 12 P01 | 25min | 2 tasks | 1 files |
+| Phase 12 P02 | 20min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -81,6 +82,8 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - (relay-balance env fix) The shipped relay-balance gauge (`show_balance`, ENRICH-01) had the **same latent env-sourcing bug**: `relay_balance()` read `ANTHROPIC_API_KEY`/`ANTHROPIC_AUTH_TOKEN` via plain `env.get()` from the per-session env, which omits secrets → the guard tripped → the `bal $…` gauge never rendered under the shared daemon. Fixed by falling those secrets back to `os.environ` (the documented pattern at `core.py:704-714`), while **`base_url` stays session-only** (never falls back — a non-relay session must not inherit the daemon's base and wrongly show a gauge). 2 regression tests guard both halves. Operational note (both fixes): the daemon must be started in a shell with the relevant keys exported (or restarted after exporting) since it reads `os.environ` frozen at start.
 - [Phase ?]: (12-01) test_predict_module_imports_no_network_or_subprocess bans {subprocess, socket, urllib.request} not bare urllib — pathlib transitively pulls in network-free urllib.parse on this Python version, unrelated to predict.py.
 - [Phase ?]: (12-01) e2e regression test computes its shared 5h resets_at as time.time()+3600 instead of the SPEC-literal historical epoch, so reconcile_account's anti-poison reset-plausibility guard never rejects it regardless of run date — keeps the FAILS-pre-fix proof deterministic.
+- [Phase ?]: [Rule 1] Relaxed _read_keyed_account_id's uuid regex bound to {1,64} (legacy reader's {8,64} unchanged) to accept short test-fixture uuids
+- [Phase ?]: [Rule 3] Fixed tests/conftest.py's autouse account_id stub to pass through to the real resolver for stdin-bearing calls, preserving the zero-arg pin
 
 ### Quick Tasks Completed
 
@@ -122,8 +125,8 @@ Items acknowledged and carried forward:
 
 ## Session Continuity
 
-Last session: 2026-07-16T09:29:59.502Z
-Stopped at: Completed 12-01-PLAN.md (Nyquist Wave 0 isolation test suite, 12 tests, RED confirmed against current predict.py/core.py)
+Last session: 2026-07-16T09:38:27.573Z
+Stopped at: Completed 12-02-PLAN.md
 
 Prior session: 2026-07-15
 Stopped at: Completed quick task 260715-pic (opt-in Firecrawl+Tavily search-provider credit bars), then two fast env-sourcing fixes for the shared-daemon render path: (1) search block sources provider keys from os.environ; (2) relay_balance() falls back to os.environ for ANTHROPIC_API_KEY/AUTH_TOKEN (base_url stays session-only) so the bal $… gauge renders live. +3 regression tests total, full suite 1024 passed (1 pre-existing version_sync failure deferred).
