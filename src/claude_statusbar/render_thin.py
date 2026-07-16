@@ -232,6 +232,10 @@ _SESSION_ENV_KEYS = (
     "CS_API_MODE",
     "CLAUDE_CODE_USE_BEDROCK",
     "CLAUDE_CODE_USE_VERTEX",
+    # Which account this session is on (account.py). Primary source is the
+    # per-session transcript_path in stdin; this env is a fallback for payloads
+    # without a transcript (e.g. `cs preview`). Not a secret — just a dir path.
+    "CLAUDE_CONFIG_DIR",
 )
 
 

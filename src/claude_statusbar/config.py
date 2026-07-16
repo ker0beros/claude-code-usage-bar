@@ -56,6 +56,11 @@ class StatusbarConfig:
     # deliberately conservative about adding text (see #3).
     show_cwd: bool = False
     cwd_style: str = DEFAULT_CWD_STYLE  # basename (default) | full
+    # Logged-in account email as a `👤 <email>` chip on the identity line
+    # (see account.py). Opt-in: default off because it surfaces PII in a
+    # widely-distributed tool (same discipline as show_cwd / show_ip_risk).
+    # Rides the identity line, so it also needs show_project_branch on.
+    show_email: bool = False
     # Live-activity / session-stats segments. show_todos (activity line) and
     # show_lines (+added -removed on the identity line) default on; the rest are
     # opt-in so the line isn't crowded for users who didn't ask.
@@ -148,6 +153,7 @@ def load_config(path: Optional[Path] = None) -> StatusbarConfig:
         show_party=_to_bool(raw.get("show_party", True)),
         show_cwd=_to_bool(raw.get("show_cwd", False)),
         cwd_style=str(raw.get("cwd_style", DEFAULT_CWD_STYLE)),
+        show_email=_to_bool(raw.get("show_email", False)),
         show_todos=_to_bool(raw.get("show_todos", True)),
         show_tools=_to_bool(raw.get("show_tools", False)),
         show_tool_rollup=_to_bool(raw.get("show_tool_rollup", False)),
@@ -187,7 +193,7 @@ VALID_KEYS = {
     "show_weekly", "show_language", "show_cost", "show_balance", "balance_bar",
     "show_cache_age",
     "show_project_branch", "show_party",
-    "show_cwd", "cwd_style",
+    "show_cwd", "cwd_style", "show_email",
     "show_todos", "show_tools", "show_tool_rollup", "show_agents",
     "show_ip_risk", "show_fp_risk",
     "show_duration", "show_lines", "show_ahead_behind", "show_version",
@@ -203,7 +209,7 @@ _BOOL_KEYS = {"show_weekly", "show_language", "show_cost", "show_balance",
               "balance_bar",
               "show_cache_age",
               "show_project_branch", "show_party",
-              "show_cwd",
+              "show_cwd", "show_email",
               "show_todos", "show_tools", "show_tool_rollup", "show_agents",
               "show_ip_risk", "show_fp_risk",
               "show_duration", "show_lines", "show_ahead_behind", "show_version",
