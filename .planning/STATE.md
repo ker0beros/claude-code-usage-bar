@@ -131,7 +131,7 @@ Items acknowledged and carried forward:
 ## Session Continuity
 
 Last session: 2026-07-16
-Stopped at: Phase 12 (Per-Account Rate-Limit Store Isolation) COMPLETE & verified via autonomous `--from 12` run — discuss → research → plan (3 plans) → execute (3 waves) → code review (clean) → verification (passed 10/10). predict.py + core.py now key the reconcile/projection stores by the session's own account; the live account2-shows-100% collision is closed. +12 tests, full suite 1102 passing with ambient CLAUDE_CONFIG_DIR. Milestone lifecycle NOT run — Phase 9 (Hardening) is still planned, so the milestone is not complete. Not yet pushed to origin/main.
+Stopped at: Phase 12 (Per-Account Rate-Limit Store Isolation) COMPLETE & verified via autonomous `--from 12` run — discuss → research → plan (3 plans) → execute (3 waves) → code review (clean) → verification (passed 10/10). predict.py + core.py now key the reconcile/projection stores by the session's own account; the live account2-shows-100% collision is closed. +12 tests, full suite 1102 passing with ambient CLAUDE_CONFIG_DIR. Milestone lifecycle NOT run — Phase 9 (Hardening) is still planned, so the milestone is not complete. Pushed to origin/main 2026-07-16 (Phase 11 + Phase 12, `11dae5f..764cbbe`).
 
 Prior session: 2026-07-15
 Stopped at: Completed quick task 260715-pic (opt-in Firecrawl+Tavily search-provider credit bars), then two fast env-sourcing fixes for the shared-daemon render path: (1) search block sources provider keys from os.environ; (2) relay_balance() falls back to os.environ for ANTHROPIC_API_KEY/AUTH_TOKEN (base_url stays session-only) so the bal $… gauge renders live. +3 regression tests total, full suite 1024 passed (1 pre-existing version_sync failure deferred).
