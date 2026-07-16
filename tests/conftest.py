@@ -9,6 +9,13 @@ def _isolate_rate_latest(tmp_path, monkeypatch):
     path) reads+writes that shared account-global store. Without isolation tests
     would pollute the developer's real cache and leak state into each other.
     Each test gets its own throwaway path."""
+    # Hermetic env: never let the developer's real multi-account CLAUDE_CONFIG_DIR
+    # leak into tests. Phase 12 made core.main() resolve the per-session account
+    # from _effective_env (os.environ), so a test that drives core.main() without
+    # isolating this var would read the real ~/.claude-account*/.claude.json.
+    # Tests that WANT a config dir set it explicitly (monkeypatch.setenv or the
+    # env= param), which runs after this autouse fixture.
+    monkeypatch.delenv("CLAUDE_CONFIG_DIR", raising=False)
     try:
         import claude_statusbar.predict as predict
         monkeypatch.setattr(predict, "_LATEST_PATH", tmp_path / "rate_latest.json")
