@@ -198,7 +198,7 @@ Phases 1–8 are delivered (shipped in v3.29.11). Phase 9 is planned and not sta
 | 9. Reliability & Maintainability Hardening | Hardening | 0/TBD | Not started | - |
 | 10. GSD Phase & Wave Indicator | unreleased | 2/2 | Complete | 2026-07-16 |
 | 11. Account Email Indicator | unreleased | 2/2 | Complete | 2026-07-16 |
-| 12. Per-Account Rate-Limit Store Isolation | unreleased | 0/TBD | Not started | - |
+| 12. Per-Account Rate-Limit Store Isolation | unreleased | 0/3 | Planned | - |
 
 ### Phase 10: GSD Phase & Wave Indicator
 
@@ -238,7 +238,7 @@ Phases 1–8 are delivered (shipped in v3.29.11). Phase 9 is planned and not sta
 
 **Goal**: The rate-limit reconcile store is keyed by the *session's own* Claude account, so multiple simultaneously logged-in accounts (via `CLAUDE_CONFIG_DIR`) never share a store bucket — each window's 5h/7d bars reflect only its own account's usage.
 **Depends on**: Phase 5 (rate-limit prediction & learning — owns `predict.py` store keying), Phase 11 (account.py per-session config-dir resolver)
-**Requirements**: TBD (define in SPEC)
+**Requirements**: R1, R2, R3, R4, R5 (defined in 12-SPEC.md)
 
 **Problem (observed 2026-07-16)**: `predict._read_account_id()` reads a hardcoded `~/.claude.json` and ignores `CLAUDE_CONFIG_DIR`, so every logged-in account resolves to the *same* UUID (whatever the default `~/.claude.json` holds) and writes into one shared store file `rate_latest.<uuid>.json`. Anthropic clock-aligns the 5h window, so different accounts share the same 5h `resets_at` and land in the same per-reset bucket; the monotonic-up healing rule then pins that bucket to the *max* reading across accounts. Live: account2 (real 5h 50%) rendered account1's 100%. The 7d bar was unaffected only because the two accounts' 7d `resets_at` differ, keeping them in separate buckets.
 
@@ -250,6 +250,8 @@ Phases 1–8 are delivered (shipped in v3.29.11). Phase 9 is planned and not sta
   4. When no session config dir is resolvable (API-key users / no `.claude.json`), behavior is unchanged from today (legacy unsuffixed store path).
   5. A regression test reproduces the collision (two accounts, same 5h `resets_at`, different `used_percentage`) and asserts each account renders its own value.
 
-**Plans**: TBD (run `/gsd-plan-phase 12` to break down)
+**Plans**: 3 plans. SPEC: `.planning/phases/12-per-account-rate-limit-store-isolation/12-SPEC.md`
 
-- [ ] TBD (run /gsd-plan-phase 12 to break down)
+- [ ] 12-01-PLAN.md — author `tests/test_account_rate_isolation.py` (12 tests, tests-first / Nyquist Wave 0; RED) [Wave 1]
+- [ ] 12-02-PLAN.md — predict.py: per-session `account_id`, `_UNSET` sentinel, R5b no-borrow keying locator, thread `account_uuid` through store consumers + landmines [Wave 2]
+- [ ] 12-03-PLAN.md — core.py: resolve session uuid once, thread into reconcile/projection/forecast/quota_cache_status; e2e regression GREEN [Wave 3]
