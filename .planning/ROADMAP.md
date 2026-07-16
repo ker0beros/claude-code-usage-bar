@@ -196,3 +196,21 @@ Phases 1–8 are delivered (shipped in v3.29.11). Phase 9 is planned and not sta
 | 7. Live Activity, Local Bridges & Safety Signals | v3.29.11 | Delivered | Complete | 2026-07-15 |
 | 8. Distribution, Packaging & Auto-Update | v3.29.11 | Delivered | Complete | 2026-07-15 |
 | 9. Reliability & Maintainability Hardening | Hardening | 0/TBD | Not started | - |
+| 10. GSD Phase & Wave Indicator | unreleased | 0/2 | In progress | - |
+
+### Phase 10: GSD Phase & Wave Indicator
+
+**Goal**: In any GSD project, the status bar shows a dedicated line with the current phase (`N/total`) and, during execution, per-wave plan progress as colored circles — read locally from `.planning/`, auto-shown, no network.
+**Depends on**: Phase 3 (multi-style rendering & theming), Phase 4 (project/branch second line)
+**Requirements**: GSD-01, GSD-02, GSD-03, GSD-04, GSD-05
+**Success Criteria** (what must be TRUE):
+
+  1. In a directory containing `.planning/STATE.md`, a `gsd` line renders automatically (no config toggle) showing `{current_phase}/{total_phases}`.
+  2. When the phase status is executing, the line shows one `●`/`○` circle per plan in the current phase, grouped by wave, colored green (completed wave) / yellow (active wave) / grey (future wave) from the active theme.
+  3. When the phase is idle/complete, the line shows the phase plus a status word (e.g. `gsd 6/9 done`) and no circles.
+  4. In a directory without `.planning/`, the rendered output is byte-for-byte unchanged from before this phase.
+
+**Plans**: SPEC written (`10-SPEC.md`). Implemented directly per approved plan.
+
+- [ ] 10-01 — `planning.py` reader (STATE.md + wave/plan derivation) [Wave 1]
+- [ ] 10-02 — `render_planning_line` + dispatcher wiring + core auto-show gate [Wave 2]
