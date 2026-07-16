@@ -196,7 +196,7 @@ Phases 1–8 are delivered (shipped in v3.29.11). Phase 9 is planned and not sta
 | 7. Live Activity, Local Bridges & Safety Signals | v3.29.11 | Delivered | Complete | 2026-07-15 |
 | 8. Distribution, Packaging & Auto-Update | v3.29.11 | Delivered | Complete | 2026-07-15 |
 | 9. Reliability & Maintainability Hardening | Hardening | 0/TBD | Not started | - |
-| 10. GSD Phase & Wave Indicator | unreleased | 0/2 | In progress | - |
+| 10. GSD Phase & Wave Indicator | unreleased | 2/2 | Complete | 2026-07-16 |
 
 ### Phase 10: GSD Phase & Wave Indicator
 
@@ -210,7 +210,7 @@ Phases 1–8 are delivered (shipped in v3.29.11). Phase 9 is planned and not sta
   3. When the phase is idle/complete, the line shows the phase plus a status word (e.g. `gsd 6/9 done`) and no circles.
   4. In a directory without `.planning/`, the rendered output is byte-for-byte unchanged from before this phase.
 
-**Plans**: SPEC written (`10-SPEC.md`). Implemented directly per approved plan.
+**Plans**: 2/2 plans executed. SPEC: `.planning/phases/10-gsd-phase-wave-indicator/10-SPEC.md`
 
-- [ ] 10-01 — `planning.py` reader (STATE.md + wave/plan derivation) [Wave 1]
-- [ ] 10-02 — `render_planning_line` + dispatcher wiring + core auto-show gate [Wave 2]
+- [x] 10-01 — `planning.py` reader (STATE.md + wave/plan derivation) [Wave 1]
+- [x] 10-02 — `render_planning_line` + dispatcher wiring + core auto-show gate [Wave 2]

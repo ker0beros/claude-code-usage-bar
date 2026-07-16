@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v3.29.11
 milestone_name: milestone
-current_phase: 6
-current_phase_name: Context Window Bar in Quota Mode
+current_phase: 10
+current_phase_name: GSD Phase & Wave Indicator
 status: phase-complete
-stopped_at: Phase 6 complete + verified (06-VERIFICATION.md, 8/8 must-haves, 936/936 tests) — implemented, unreleased
-last_updated: "2026-07-15T10:35:00.000Z"
-last_activity: 2026-07-15
-last_activity_desc: "Fast fix: relay-balance gauge (show_balance) had the same env-sourcing bug as the search bars — relay_balance() now falls back to os.environ for the secret ANTHROPIC_API_KEY/AUTH_TOKEN (base_url stays session-only) so the bal $… gauge renders live under the daemon; +2 regression tests; full suite 1024 passed (1 pre-existing version_sync failure deferred)"
+stopped_at: Phase 10 complete — GSD phase/wave indicator line (auto-shown, phases-only), 24 new tests, full suite 1066 passed
+last_updated: "2026-07-16T14:20:00.000Z"
+last_activity: 2026-07-16
+last_activity_desc: "Phase 10: added a GSD phase/wave indicator line to the status bar. New planning.py reader (pure-fs, None-gated like party.py) parses .planning/STATE.md + derives per-wave plan progress from *-PLAN.md wave: frontmatter and *-SUMMARY.md presence; render_planning_line shows 'gsd N/total' + ●/○ circles colored green/yellow/grey by wave state during execution, or a status word when idle/complete; core auto-shows it on its own line when .planning/ is present (no toggle). Right-align on line 1 was dropped after research proved terminal width is unavailable under Claude Code. +24 tests; full suite 1066 passed."
 progress:
-  total_phases: 9
-  completed_phases: 8
-  total_plans: 3
-  completed_plans: 3
-  percent: 89
+  total_phases: 10
+  completed_phases: 9
+  total_plans: 2
+  completed_plans: 2
+  percent: 90
 ---
 
 # Project State
@@ -24,16 +24,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-15)
 
 **Core value:** At-a-glance rate-limit / context / model / cost visibility in the Claude Code status line — fast, within budget, zero required deps.
-**Current focus:** Phase 6 complete + verified (implemented, unreleased). Next candidate: Phase 9 — Reliability & Maintainability Hardening (planned).
+**Current focus:** Phase 10 complete (GSD phase/wave indicator, implemented, unreleased). Phase 9 — Reliability & Maintainability Hardening — remains planned.
 
 ## Current Position
 
-Phase: 6 of 9 (Context Window Bar in Quota Mode) — COMPLETE. Phases 1–5, 7, 8 delivered in v3.29.11; Phase 9 planned.
-Plan: 3 of 3 in current phase (06-01 config toggle done, 06-02 quota-mode ctx bar renderers done, 06-03 core/preview wiring done)
-Status: Phase 6 complete — ctx bar live in quota mode, gated by show_context, off reproduces prior behavior byte-for-byte
-Last activity: 2026-07-15 — Completed quick task 260715-ux9: moved fc/tv search-credit bars onto their own status-line row
+Phase: 10 of 10 (GSD Phase & Wave Indicator) — COMPLETE. Phases 1–5, 7, 8 delivered in v3.29.11; Phase 6 & 10 implemented (unreleased); Phase 9 planned.
+Plan: 2 of 2 in current phase (10-01 planning.py reader done, 10-02 render + wiring + core auto-show gate done)
+Status: Phase 10 complete — `gsd N/total` line auto-shows on its own row in GSD projects, ●/○ wave circles during execution, byte-for-byte unchanged when no .planning/ present
+Last activity: 2026-07-16 — Completed Phase 10: GSD phase/wave indicator (planning.py reader + render_planning_line + core auto-show); +24 tests, full suite 1066 passed
 
-Progress: [████████░░] 89% (8 of 9 phases complete; Phase 6 implemented & verified, unreleased; Phase 9 planned)
+Progress: [█████████░] 90% (9 of 10 phases complete; Phase 6 & 10 implemented & verified, unreleased; Phase 9 planned)
 
 ## Performance Metrics
 
