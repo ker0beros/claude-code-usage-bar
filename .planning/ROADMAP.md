@@ -198,7 +198,7 @@ Phases 1–8 are delivered (shipped in v3.29.11). Phase 9 is planned and not sta
 | 9. Reliability & Maintainability Hardening | Hardening | 0/TBD | Not started | - |
 | 10. GSD Phase & Wave Indicator | unreleased | 2/2 | Complete | 2026-07-16 |
 | 11. Account Email Indicator | unreleased | 2/2 | Complete | 2026-07-16 |
-| 12. Per-Account Rate-Limit Store Isolation | unreleased | 0/3 | Planned | - |
+| 12. Per-Account Rate-Limit Store Isolation | unreleased | 1/3 | In Progress|  |
 
 ### Phase 10: GSD Phase & Wave Indicator
 
@@ -250,10 +250,10 @@ Phases 1–8 are delivered (shipped in v3.29.11). Phase 9 is planned and not sta
   4. When no session config dir is resolvable (API-key users / no `.claude.json`), behavior is unchanged from today (legacy unsuffixed store path).
   5. A regression test reproduces the collision (two accounts, same 5h `resets_at`, different `used_percentage`) and asserts each account renders its own value.
 
-**Plans**: 3 plans. SPEC: `.planning/phases/12-per-account-rate-limit-store-isolation/12-SPEC.md`
+**Plans**: 1/3 plans executed
 **Wave 1**
 
-- [ ] 12-01-PLAN.md — author `tests/test_account_rate_isolation.py` (12 tests, tests-first / Nyquist Wave 0; RED) [Wave 1]
+- [x] 12-01-PLAN.md — author `tests/test_account_rate_isolation.py` (12 tests, tests-first / Nyquist Wave 0; RED) [Wave 1]
 
 **Wave 2** *(blocked on Wave 1 completion)*
 

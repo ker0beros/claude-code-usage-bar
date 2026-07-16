@@ -5,8 +5,8 @@ milestone_name: milestone
 current_phase: 12
 current_phase_name: Per-Account Rate-Limit Store Isolation
 status: executing
-stopped_at: Phase 11 complete — opt-in account-email chip (👤 <email>) on the identity line, 24 new tests, full suite 1090 passed
-last_updated: "2026-07-16T09:20:12.866Z"
+stopped_at: Completed 12-01-PLAN.md (Nyquist Wave 0 isolation test suite, 12 tests, RED confirmed against current predict.py/core.py)
+last_updated: "2026-07-16T09:29:59.507Z"
 last_activity: 2026-07-16
 last_activity_desc: Phase 12 execution started
 progress:
@@ -28,8 +28,8 @@ See: .planning/PROJECT.md (updated 2026-07-15)
 ## Current Position
 
 Phase: 12 (Per-Account Rate-Limit Store Isolation) — EXECUTING
-Plan: 1 of 3
-Status: Executing Phase 12
+Plan: 2 of 3
+Status: Ready to execute
 Last activity: 2026-07-16 — Phase 12 execution started
 
 Progress: [██████████] 91% (10 of 11 phases complete; Phase 6, 10 & 11 implemented & verified, unreleased; Phase 9 planned)
@@ -61,6 +61,7 @@ Progress: [██████████] 91% (10 of 11 phases complete; Phase 
 |------|----------|-------|-------|
 | Phase 06 P02 | 20min | 2 tasks | 2 files |
 | Phase 06 P03 | 35min | 2 tasks | 4 files (+2 created) |
+| Phase 12 P01 | 25min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -78,6 +79,8 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - (260715-lm1) Reset-timer `⏰` countdowns now color by **elapsed % of the window** on a fixed 65/85 band that is the timer's OWN (`TIMER_WARNING_THRESHOLD`/`TIMER_CRITICAL_THRESHOLD` in `progress.py`, never the bar's configurable thresholds). Polarity flips per window: 5h FLIPPED (near reset → green, fresh quota imminent), 7d NORMAL (near reset → red, week running out). One shared helper `timer_severity_rgb(elapsed_pct, *, flip, theme)` drives classic/capsule/hairline + preview; bar fill/label and the ✨/⚡/🎉 emoji untouched; core computes elapsed% in the quota branch only (waiting/stale/custom-reset_hour fall back to prior color).
 - (260715-pic) Opt-in `show_search_credits` (default off) surfaces remaining API credits for search providers as per-provider mini fuel-gauge bars (`fc` Firecrawl, `tv` Tavily), each shown only when its env key (`FIRECRAWL_API_KEY`/`TAVILY_API_KEY`) is present. New `provider_usage.py` + `_provider_usage_refresh.py` clone the ip_risk opt-in signal + balance_cache mechanics: render path reads cache only and NEVER touches the network; a detached `urllib` prober (Firecrawl `/v2/team/credit-usage`, Tavily `/usage`, Bearer auth) is the sole spawn path (TTL 300s/neg 3600s/inflight 60s), keys fingerprinted (sha1, never on disk). Reuses `_build_dimension`/`_balance_fill_rgb` (25/10 remaining thresholds); wired into all 4 `_render_style` branches + daemon heartbeat. Stdlib-only, zero new deps. Exa deferred (no remaining-balance API). **Fast follow-up fix:** `core.main()`'s search block now sources the provider keys from `os.environ` (not `_effective_env`) — the per-session env deliberately omits secrets (persisted to disk), so reading it left `segments()` blind to `FIRECRAWL_API_KEY`/`TAVILY_API_KEY` and the bars never rendered live; `os.environ` matches the daemon heartbeat and keeps keys off disk. Regression test drives the full `core.main()` daemon-path render (key only in `os.environ`, `_cs_env` lacking it) — the render-layer tests couldn't catch it.
 - (relay-balance env fix) The shipped relay-balance gauge (`show_balance`, ENRICH-01) had the **same latent env-sourcing bug**: `relay_balance()` read `ANTHROPIC_API_KEY`/`ANTHROPIC_AUTH_TOKEN` via plain `env.get()` from the per-session env, which omits secrets → the guard tripped → the `bal $…` gauge never rendered under the shared daemon. Fixed by falling those secrets back to `os.environ` (the documented pattern at `core.py:704-714`), while **`base_url` stays session-only** (never falls back — a non-relay session must not inherit the daemon's base and wrongly show a gauge). 2 regression tests guard both halves. Operational note (both fixes): the daemon must be started in a shell with the relevant keys exported (or restarted after exporting) since it reads `os.environ` frozen at start.
+- [Phase ?]: (12-01) test_predict_module_imports_no_network_or_subprocess bans {subprocess, socket, urllib.request} not bare urllib — pathlib transitively pulls in network-free urllib.parse on this Python version, unrelated to predict.py.
+- [Phase ?]: (12-01) e2e regression test computes its shared 5h resets_at as time.time()+3600 instead of the SPEC-literal historical epoch, so reconcile_account's anti-poison reset-plausibility guard never rejects it regardless of run date — keeps the FAILS-pre-fix proof deterministic.
 
 ### Quick Tasks Completed
 
@@ -119,8 +122,8 @@ Items acknowledged and carried forward:
 
 ## Session Continuity
 
-Last session: 2026-07-16
-Stopped at: Completed Phase 11 (Account Email Indicator) — opt-in `👤 <email>` chip on the identity line. New account.py reader resolves oauthAccount.emailAddress from the session's config dir (transcript_path → CLAUDE_CONFIG_DIR → ~/.claude); render_identity_line email_text chip before the version; core wiring gated on cfg.show_email (default off). Verified live across two accounts. +24 tests, full suite 1090 passed. show_email flipped on in ~/.claude/claude-statusbar.json for the maintainer. Not yet pushed to origin/main.
+Last session: 2026-07-16T09:29:59.502Z
+Stopped at: Completed 12-01-PLAN.md (Nyquist Wave 0 isolation test suite, 12 tests, RED confirmed against current predict.py/core.py)
 
 Prior session: 2026-07-15
 Stopped at: Completed quick task 260715-pic (opt-in Firecrawl+Tavily search-provider credit bars), then two fast env-sourcing fixes for the shared-daemon render path: (1) search block sources provider keys from os.environ; (2) relay_balance() falls back to os.environ for ANTHROPIC_API_KEY/AUTH_TOKEN (base_url stays session-only) so the bal $… gauge renders live. +3 regression tests total, full suite 1024 passed (1 pre-existing version_sync failure deferred).
