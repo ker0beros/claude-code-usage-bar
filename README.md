@@ -296,7 +296,8 @@ Persisted to `~/.claude/claude-statusbar.json`:
   "show_agents": false,
   "show_duration": false,
   "show_lines": true,
-  "show_ahead_behind": false
+  "show_ahead_behind": false,
+  "show_email": false
 }
 ```
 
@@ -315,6 +316,7 @@ Persisted to `~/.claude/claude-statusbar.json`:
 | `show_project_branch` | bool, default `true` | Append a second line `⤷ <project> ⎇ <branch>●` below the bar. Project name comes from Claude Code's `workspace.repo.name` stdin field (falls back to cwd basename); branch is read from `.git/HEAD` directly. The `●` dirty marker is refreshed by a background helper and cached 5 s — the inline render path never blocks on `git`. Disable with `cs config set show_project_branch false`. |
 | `show_party` | bool, default `true` | Append the local AgentParty/Codex bridge line when `~/.agentparty/state/<workspaceId>/statusline.json` exists for the current workspace. Shows channel, identity kind/name, listener mode, unread count, and last-message preview. Local-only: no AgentParty CLI call, no token read, no network. Disable with `cs config set show_party false`. |
 | `show_ahead_behind` | bool, default `false` | Append a `↑2↓1` commits-ahead/behind-upstream marker after the branch on the identity line. Reuses the same cached `git status --branch` call as the dirty dot, so it adds no extra git spawn. Only takes effect when `show_project_branch` is on (it lives on that line). Arrows show only for nonzero directions; in sync → nothing. |
+| `show_email` | bool, default `false` | Append a `👤 <email>` chip on the identity line showing the **logged-in Claude account's email** — handy when you run several accounts via `CLAUDE_CONFIG_DIR` and want to see which one a window is on. Resolved locally: the session's config dir is derived from Claude Code's `transcript_path` (falling back to `CLAUDE_CONFIG_DIR`, then `~/.claude`), and the email is read from that dir's `.claude.json` (`oauthAccount.emailAddress`) via a memoized scan — no network, no subprocess, no token access. Only takes effect when `show_project_branch` is on (it rides that line), and auto-hides for API-key users / when no email resolves. Opt-in because it surfaces your email. Enable with `cs config set show_email on`. |
 | `show_todos` | bool, default `true` | Third "activity" line: the in-progress todo + `done/total`, e.g. `▸ Wire the activity line (1/3)`. Parsed from the newest `TodoWrite` in the transcript (full list, last-write-wins) via the same bounded reverse-tail read as the cache countdown. The clearest "is my long turn making progress?" signal. Disable with `cs config set show_todos false`. |
 | `show_tools` | bool, default `false` | Activity line: the **active tool** (`◐ Edit auth.py` — the newest tool_use with no result yet). MCP names are shortened (`mcp__figma__get_screenshot` → `get_screenshot`). Opt-in. |
 | `show_tool_rollup` | bool, default `false` | Activity line: a frequency rollup of recently-completed tools (`✓ Edit×14 Bash×6 Read×4`). A volume tally rather than a live signal — separate from `show_tools` and off by default. Opt-in. |
