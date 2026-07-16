@@ -775,7 +775,7 @@ _GSD_STATE_WORD = {
 
 
 def render_planning_line(planning, *, theme: Theme = None,
-                         use_color: bool = True, density: str = "regular") -> str:
+                         use_color: bool = True) -> str:
     """Render the GSD phase/wave indicator: ``gsd 6/9 ●● ○``.
 
     Phase is text ``current/total`` (Option A). While executing, one circle per
