@@ -251,7 +251,14 @@ Phases 1–8 are delivered (shipped in v3.29.11). Phase 9 is planned and not sta
   5. A regression test reproduces the collision (two accounts, same 5h `resets_at`, different `used_percentage`) and asserts each account renders its own value.
 
 **Plans**: 3 plans. SPEC: `.planning/phases/12-per-account-rate-limit-store-isolation/12-SPEC.md`
+**Wave 1**
 
 - [ ] 12-01-PLAN.md — author `tests/test_account_rate_isolation.py` (12 tests, tests-first / Nyquist Wave 0; RED) [Wave 1]
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 12-02-PLAN.md — predict.py: per-session `account_id`, `_UNSET` sentinel, R5b no-borrow keying locator, thread `account_uuid` through store consumers + landmines [Wave 2]
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 12-03-PLAN.md — core.py: resolve session uuid once, thread into reconcile/projection/forecast/quota_cache_status; e2e regression GREEN [Wave 3]

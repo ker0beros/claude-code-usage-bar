@@ -4,11 +4,11 @@ milestone: v3.29.11
 milestone_name: milestone
 current_phase: 11
 current_phase_name: Account Email Indicator
-status: phase-complete
+status: executing
 stopped_at: Phase 11 complete — opt-in account-email chip (👤 <email>) on the identity line, 24 new tests, full suite 1090 passed
-last_updated: "2026-07-16T16:30:00.000Z"
+last_updated: "2026-07-16T09:17:55.901Z"
 last_activity: 2026-07-16
-last_activity_desc: "Phase 11: added an opt-in account-email chip to the identity line. New account.py reader (pure-fs, memoized, never-raises) resolves the logged-in account's oauthAccount.emailAddress from the active session's .claude.json — config dir derived from stdin transcript_path (daemon-safe, per-session) → CLAUDE_CONFIG_DIR → ~/.claude, .claude.json at <CONFIG_DIR>/.claude.json or $HOME/.claude.json. render_identity_line gains an email_text param rendering '· 👤 <email>' before the version; core resolves it inside the show_project_branch block when cfg.show_email (default off, opt-in — PII). CLAUDE_CONFIG_DIR added to render_thin._SESSION_ENV_KEYS as env fallback. Verified live: separate windows on different accounts show their own emails. +24 tests; full suite 1090 passed."
+last_activity_desc: "Completed Phase 11: account-email indicator (account.py reader + render_identity_line email chip + core wiring, show_email default off); +24 tests, full suite 1090 passed"
 progress:
   total_phases: 11
   completed_phases: 10
@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-07-15)
 
 Phase: 11 of 12 (Account Email Indicator) — COMPLETE. Phase 12 (Per-Account Rate-Limit Store Isolation) added, not started. Phases 1–5, 7, 8 delivered in v3.29.11; Phase 6, 10 & 11 implemented (unreleased); Phase 9 planned.
 Plan: 2 of 2 in current phase (11-01 account.py reader + show_email config done, 11-02 identity-line chip + core wiring + tests done)
-Status: Phase 11 complete — opt-in `👤 <email>` chip on the identity line, resolved per-session per-account; default off; identity line byte-for-byte unchanged when off or unresolvable
+Status: Ready to execute
 Last activity: 2026-07-16 — Completed Phase 11: account-email indicator (account.py reader + render_identity_line email chip + core wiring, show_email default off); +24 tests, full suite 1090 passed
 
 Progress: [██████████] 91% (10 of 11 phases complete; Phase 6, 10 & 11 implemented & verified, unreleased; Phase 9 planned)
