@@ -2,37 +2,37 @@
 gsd_state_version: 1.0
 milestone: v3.29.11
 milestone_name: milestone
-current_phase: 12
-current_phase_name: Per-Account Rate-Limit Store Isolation
-status: verifying
-stopped_at: Completed 12-03-PLAN.md
-last_updated: "2026-07-16T09:46:52.207Z"
+current_phase: 9
+current_phase_name: Reliability & Maintainability Hardening (Planned)
+status: planning
+stopped_at: "Phase 12 complete & verified — per-account rate-limit store isolation (5h bar now per-account, not cross-account-max); autonomous --from 12 run finished. Phase 9 (Hardening) remains planned."
+last_updated: "2026-07-16T10:04:15.267Z"
 last_activity: 2026-07-16
-last_activity_desc: Phase 12 execution started
+last_activity_desc: "Phase 12 complete (per-account rate-limit store isolation) — 3/3 plans, code review clean, verification passed 10/10, full suite 1102 passing with ambient CLAUDE_CONFIG_DIR. Transitioned to Phase 9 (planned)."
 progress:
-  total_phases: 0
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_phases: 12
+  completed_phases: 11
+  total_plans: 3
+  completed_plans: 3
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-07-15)
+See: .planning/PROJECT.md (updated 2026-07-16)
 
 **Core value:** At-a-glance rate-limit / context / model / cost visibility in the Claude Code status line — fast, within budget, zero required deps.
-**Current focus:** Phase 12 — Per-Account Rate-Limit Store Isolation
+**Current focus:** Phase 12 complete (per-account rate-limit store isolation, implemented & unreleased). Phase 9 — Reliability & Maintainability Hardening — remains the only planned, not-started phase.
 
 ## Current Position
 
-Phase: 12 (Per-Account Rate-Limit Store Isolation) — EXECUTING
-Plan: 3 of 3
-Status: Phase complete — ready for verification
-Last activity: 2026-07-16 — Phase 12 execution started
+Phase: 9 — Reliability & Maintainability Hardening (Planned)
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-07-16 — Phase 12 complete, transitioned to Phase 9
 
-Progress: [██████████] 91% (10 of 11 phases complete; Phase 6, 10 & 11 implemented & verified, unreleased; Phase 9 planned)
+Progress: [█████████░] 92% (11 of 12 phases complete; Phase 6, 10, 11 & 12 implemented & verified, unreleased; Phase 9 the only planned/not-started phase)
 
 ## Performance Metrics
 
@@ -49,6 +49,7 @@ Progress: [██████████] 91% (10 of 11 phases complete; Phase 
 | 1–5, 7, 8 (delivered) | not GSD-tracked | - | - |
 | 6 (complete) | 3 of 3 done | ~75min | ~25min |
 | 9 (planned) | TBD | - | - |
+| 12 | 3 | - | - |
 
 **Recent Trend:**
 
@@ -104,6 +105,7 @@ None yet.
 ### Roadmap Evolution
 
 - Phase 12 added (2026-07-16): Per-Account Rate-Limit Store Isolation. Diagnosed live — the 5h bar showed 100% on account2 (real 50%) because `predict._read_account_id()` hardcodes `~/.claude.json` and ignores `CLAUDE_CONFIG_DIR`, collapsing all logged-in accounts into one shared reconcile store; the clock-aligned 5h window makes accounts share a `resets_at` bucket, and monotonic-up healing pins it to account1's 100%. Fix: key the store per-session via account.py's resolver. Depends on Phase 5 + Phase 11.
+- Phase 12 COMPLETE (2026-07-16): shipped the fix — `predict.account_id(stdin, env=, home=)` resolves the uuid from the session's own config dir (reusing `account.resolve_config_dir()`), a `_UNSET` sentinel tri-states `_account_path` (omitted→legacy hardcoded / explicit `None`→legacy unsuffixed no-borrow / uuid→suffixed), a path-keyed `_SESSION_ACCOUNT_CACHE`, and an R5b-strict keying reader that never borrows `$HOME/.claude.json` for a named dir. Threaded `account_uuid` through reconcile/forecast/projection/quota_cache_status **plus the two hidden landmines** `regime_changed_at()` and `_projection_result_key()`; core.py resolves it once per render. Both `rate_latest.*` and `rate_projection.*` re-keyed; fix-forward (no store migration). +12 isolation tests incl. the e2e collision regression (proven FAILS-pre-fix / PASSES-post-fix); conftest autouse fixture now neutralizes `CLAUDE_CONFIG_DIR` so the suite is hermetic in the maintainer's multi-account shell. Full suite 1102 passing.
 
 ### Blockers/Concerns
 
@@ -128,8 +130,8 @@ Items acknowledged and carried forward:
 
 ## Session Continuity
 
-Last session: 2026-07-16T09:46:52.202Z
-Stopped at: Completed 12-03-PLAN.md
+Last session: 2026-07-16
+Stopped at: Phase 12 (Per-Account Rate-Limit Store Isolation) COMPLETE & verified via autonomous `--from 12` run — discuss → research → plan (3 plans) → execute (3 waves) → code review (clean) → verification (passed 10/10). predict.py + core.py now key the reconcile/projection stores by the session's own account; the live account2-shows-100% collision is closed. +12 tests, full suite 1102 passing with ambient CLAUDE_CONFIG_DIR. Milestone lifecycle NOT run — Phase 9 (Hardening) is still planned, so the milestone is not complete. Not yet pushed to origin/main.
 
 Prior session: 2026-07-15
 Stopped at: Completed quick task 260715-pic (opt-in Firecrawl+Tavily search-provider credit bars), then two fast env-sourcing fixes for the shared-daemon render path: (1) search block sources provider keys from os.environ; (2) relay_balance() falls back to os.environ for ANTHROPIC_API_KEY/AUTH_TOKEN (base_url stays session-only) so the bal $… gauge renders live. +3 regression tests total, full suite 1024 passed (1 pre-existing version_sync failure deferred).

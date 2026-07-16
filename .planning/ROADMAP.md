@@ -198,7 +198,7 @@ Phases 1–8 are delivered (shipped in v3.29.11). Phase 9 is planned and not sta
 | 9. Reliability & Maintainability Hardening | Hardening | 0/TBD | Not started | - |
 | 10. GSD Phase & Wave Indicator | unreleased | 2/2 | Complete | 2026-07-16 |
 | 11. Account Email Indicator | unreleased | 2/2 | Complete | 2026-07-16 |
-| 12. Per-Account Rate-Limit Store Isolation | unreleased | 3/3 | In Progress|  |
+| 12. Per-Account Rate-Limit Store Isolation | unreleased | 3/3 | Complete    | 2026-07-16 |
 
 ### Phase 10: GSD Phase & Wave Indicator
 

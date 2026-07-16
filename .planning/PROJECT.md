@@ -106,6 +106,7 @@ dependencies**. If everything else fails, the bar must still render fast and nev
 | Per-segment color ownership (no line-wide color bleed) | Each metric's severity must read independently | ✓ Good |
 | Opt-in second status line for project/branch; git read from `.git/HEAD` + TTL dirty cache | Identity without a `git` subprocess on the render path | ✓ Good |
 | Context re-introduced as an opt-out bar segment (supersedes earlier "context is noise") | Consistent bar idiom; user can still hide it via `show_context` | ✓ Good |
+| Per-session (per-account) rate-limit store keying — resolve the account UUID from the session's OWN config dir (`transcript_path` → `CLAUDE_CONFIG_DIR` → `~/.claude`), reusing `account.py`; a named dir without its own `.claude.json` never borrows `$HOME`'s uuid (Phase 12, refines the earlier account-UUID-keyed decision) | Concurrent accounts share a clock-aligned 5h `resets_at`, so a single hardcoded-`~/.claude.json` store bucket + monotonic-up healing pinned account2's 5h bar to account1's 100% (live 2026-07-16) | ✓ Fixed (Phase 12) |
 
 ---
-*Last updated: 2026-07-15 after ingest bootstrap (existing shipped project, v3.29.11)*
+*Last updated: 2026-07-16 after Phase 12 (per-account rate-limit store isolation)*
