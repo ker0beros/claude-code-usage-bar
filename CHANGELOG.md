@@ -9,7 +9,7 @@ For a quick overview of the latest release, see the
 
 ---
 
-## Unreleased
+## v3.33.0 — 2026-07-23
 
 - Shipped defaults changed for **fresh installs only**: `theme` now defaults to
   `tokyo-night` (was `graphite`), `show_email` now defaults **on** (was off —
