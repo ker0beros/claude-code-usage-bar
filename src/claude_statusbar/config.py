@@ -16,7 +16,7 @@ from typing import Any, Optional
 CONFIG_PATH = Path.home() / ".claude" / "claude-statusbar.json"
 
 DEFAULT_STYLE = "classic"     # keep existing behavior for upgraders
-DEFAULT_THEME = "graphite"
+DEFAULT_THEME = "tokyo-night"
 DEFAULT_DENSITY = "regular"   # cozy | regular | compact
 DEFAULT_AUTO_COMPACT_WIDTH = 0  # 0 = disabled; otherwise force hairline below this width
 DEFAULT_CACHE_TTL_SECONDS = 300  # 5min — Anthropic's base prompt cache TTL.
@@ -45,7 +45,7 @@ class StatusbarConfig:
     # Render the balance as a fuel-gauge battery (fill = remaining %) instead of
     # plain `bal $X`. Falls back to text when the relay reports no usable limit.
     balance_bar: bool = True
-    show_cache_age: bool = True
+    show_cache_age: bool = False
     show_project_branch: bool = True
     # Local AgentParty attachment line. Reads only ~/.agentparty state for the
     # current workspace; no network and no token access.
@@ -57,13 +57,14 @@ class StatusbarConfig:
     show_cwd: bool = False
     cwd_style: str = DEFAULT_CWD_STYLE  # basename (default) | full
     # Logged-in account email as a `👤 <email>` chip on the identity line
-    # (see account.py). Opt-in: default off because it surfaces PII in a
-    # widely-distributed tool (same discipline as show_cwd / show_ip_risk).
+    # (see account.py). Default on: maintainer's explicit choice, surfacing
+    # who's signed in. Disable with `cs config set show_email off` if the
+    # PII exposure is unwanted (same discipline as show_cwd / show_ip_risk).
     # Rides the identity line, so it also needs show_project_branch on.
-    show_email: bool = False
-    # Live-activity / session-stats segments. show_todos (activity line) and
-    # show_lines (+added -removed on the identity line) default on; the rest are
-    # opt-in so the line isn't crowded for users who didn't ask.
+    show_email: bool = True
+    # Live-activity / session-stats segments. show_todos (activity line) defaults
+    # on; show_lines (+added -removed on the identity line) defaults off along
+    # with the rest, so the line isn't crowded for users who didn't ask.
     show_todos: bool = True
     show_tools: bool = False
     show_tool_rollup: bool = False
@@ -77,10 +78,10 @@ class StatusbarConfig:
     # affected relay users are warned without having to opt in.
     show_fp_risk: bool = True
     show_duration: bool = False
-    show_lines: bool = True
+    show_lines: bool = False
     show_ahead_behind: bool = False
     # A faint `· vX.Y.Z` at the very end of the identity line (dimmest grey).
-    show_version: bool = True
+    show_version: bool = False
     # A dedicated `⚙ effort:… · think:… · fast:… · style:…` session-mode line.
     show_mode: bool = True
     # When effort is top-tier (xhigh/max/ultracode), flow a pink→purple gradient
@@ -148,12 +149,12 @@ def load_config(path: Optional[Path] = None) -> StatusbarConfig:
         show_cost=_to_bool(raw.get("show_cost", False)),
         show_balance=_to_bool(raw.get("show_balance", True)),
         balance_bar=_to_bool(raw.get("balance_bar", True)),
-        show_cache_age=_to_bool(raw.get("show_cache_age", True)),
+        show_cache_age=_to_bool(raw.get("show_cache_age", False)),
         show_project_branch=_to_bool(raw.get("show_project_branch", True)),
         show_party=_to_bool(raw.get("show_party", True)),
         show_cwd=_to_bool(raw.get("show_cwd", False)),
         cwd_style=str(raw.get("cwd_style", DEFAULT_CWD_STYLE)),
-        show_email=_to_bool(raw.get("show_email", False)),
+        show_email=_to_bool(raw.get("show_email", True)),
         show_todos=_to_bool(raw.get("show_todos", True)),
         show_tools=_to_bool(raw.get("show_tools", False)),
         show_tool_rollup=_to_bool(raw.get("show_tool_rollup", False)),
@@ -161,9 +162,9 @@ def load_config(path: Optional[Path] = None) -> StatusbarConfig:
         show_ip_risk=_to_bool(raw.get("show_ip_risk", False)),
         show_fp_risk=_to_bool(raw.get("show_fp_risk", True)),
         show_duration=_to_bool(raw.get("show_duration", False)),
-        show_lines=_to_bool(raw.get("show_lines", True)),
+        show_lines=_to_bool(raw.get("show_lines", False)),
         show_ahead_behind=_to_bool(raw.get("show_ahead_behind", False)),
-        show_version=_to_bool(raw.get("show_version", True)),
+        show_version=_to_bool(raw.get("show_version", False)),
         show_mode=_to_bool(raw.get("show_mode", True)),
         mode_gradient=_to_bool(raw.get("mode_gradient", True)),
         bar_shimmer=_to_bool(raw.get("bar_shimmer", False)),
