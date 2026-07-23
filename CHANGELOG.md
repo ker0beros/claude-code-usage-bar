@@ -11,6 +11,12 @@ For a quick overview of the latest release, see the
 
 ## Unreleased
 
+- Shipped defaults changed for **fresh installs only**: `theme` now defaults to
+  `tokyo-night` (was `graphite`), `show_email` now defaults **on** (was off —
+  the account-email chip ships visible), and `show_cache_age`, `show_lines`,
+  and `show_version` now default **off** (were on). Existing users with a
+  `~/.claude/claude-statusbar.json` are unaffected — their saved keys take
+  precedence over these built-in defaults.
 - Search-provider credit bars: opt-in `fc`/`tv` mini fuel-gauge bars show
   remaining Firecrawl / Tavily API credits, each shown only when that
   provider's API key (`FIRECRAWL_API_KEY` / `TAVILY_API_KEY`) is present.
