@@ -6,9 +6,9 @@ current_phase: 9
 current_phase_name: Reliability & Maintainability Hardening (Planned)
 status: planning
 stopped_at: "Phase 12 complete & verified — per-account rate-limit store isolation (5h bar now per-account, not cross-account-max); autonomous --from 12 run finished. Phase 9 (Hardening) remains planned."
-last_updated: "2026-07-16T10:04:15.267Z"
-last_activity: 2026-07-16
-last_activity_desc: "Phase 12 complete (per-account rate-limit store isolation) — 3/3 plans, code review clean, verification passed 10/10, full suite 1102 passing with ambient CLAUDE_CONFIG_DIR. Transitioned to Phase 9 (planned)."
+last_updated: "2026-07-23T00:40:00.000Z"
+last_activity: 2026-07-23
+last_activity_desc: "Quick task 260723-bp4 complete — flipped 5 shipped config defaults for fresh installs (theme→tokyo-night, show_email on, show_cache_age/show_lines/show_version off) in both dataclass fields and load_config() fallbacks; tests + README + CHANGELOG updated; full suite 1114 passing."
 progress:
   total_phases: 12
   completed_phases: 11
@@ -97,6 +97,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 | 260715-lm1 | 2026-07-15 | Reset-timer countdowns color by elapsed% on a fixed 65/85 band (5h flipped green-when-fresh, 7d normal red-when-late), decoupled from the bar's thresholds; 34 new tests | b28e836, c2427d5, 79bcd6d |
 | 260715-pic | 2026-07-15 | Opt-in search-provider credit bars (Firecrawl `fc` + Tavily `tv`), default off; detached prober + TTL/negative cache clones ip_risk + balance_cache; render path never touches the network; 52 new tests | 3640e0e, 3dee232, 9265e55 |
 | 260715-ux9 | 2026-07-15 | Moved fc/tv search-credit bars onto their own status-line row directly below the primary quota bar, each style in its own idiom (classic batteries · capsule/hairline pills); cache-age stays on the quota line; empty/None → no blank row; placement + cache-line-guard tests added | ea46202, 1605f6b |
+| 260723-bp4 | 2026-07-23 | Flipped 5 shipped defaults for fresh installs to the maintainer's preferred look: theme→tokyo-night, show_email on, show_cache_age/show_lines/show_version off; updated BOTH the dataclass fields and the load_config() fallbacks; refreshed the 4 default-asserting tests + README + CHANGELOG; full suite 1114 passing | b9ee121, f41d1bb, fa0540b |
 
 ### Pending Todos
 
