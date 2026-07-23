@@ -193,9 +193,9 @@ def test_version_is_faint_and_dim_grey_in_color():
     assert f"\033[2m\033[38;2;{edge[0]};{edge[1]};{edge[2]}m· v3.11.2" in s
 
 
-def test_show_version_config_default_on():
+def test_show_version_config_default_off():
     from claude_statusbar.config import StatusbarConfig
-    assert StatusbarConfig().show_version is True
+    assert StatusbarConfig().show_version is False
 
 
 def test_update_hint_appended_when_newer(tmp_path):

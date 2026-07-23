@@ -3,7 +3,7 @@
 Reader: account.resolve_account_email derives the active config dir from the
 per-session transcript_path (fallback CLAUDE_CONFIG_DIR, then ~/.claude), reads
 oauthAccount.emailAddress from that dir's .claude.json (fallback $HOME/.claude.json).
-Config: `show_email` (bool, default False). Render: `👤 <email>` chip on the
+Config: `show_email` (bool, default True). Render: `👤 <email>` chip on the
 identity line, before the version.
 """
 
@@ -165,8 +165,8 @@ def test_resolve_never_raises_on_garbage(tmp_path):
 
 # --- config -------------------------------------------------------------------
 
-def test_show_email_defaults_off():
-    assert config.StatusbarConfig().show_email is False
+def test_show_email_defaults_on():
+    assert config.StatusbarConfig().show_email is True
 
 
 def test_show_email_roundtrip(tmp_path):
